@@ -1,0 +1,1494 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Andrei — Copper & Diamonds (Pocket Mine)</title>
+  <style>
+    :root{
+      --bg0:#07090f;
+      --bg1:#0b1022;
+      --panel:#0e1633cc;
+      --panel2:#0b122aee;
+      --text:#eaf0ff;
+      --muted:#aebad7;
+      --accent:#ffb55a;
+      --good:#54f08b;
+      --bad:#ff5a7a;
+      --copper:#c06a3a;
+      --diamond:#55e8ff;
+    }
+    html,body{height:100%; margin:0; background: radial-gradient(1200px 900px at 40% 20%, #111a3a 0%, var(--bg0) 60%, #05060b 100%); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
+    *{box-sizing:border-box;}
+    body{overflow:hidden;}
+    /* Important for mobile: prevent scrolling / selection */
+    #wrap{
+      position:fixed; inset:0;
+      display:grid; grid-template-rows:auto 1fr auto;
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      gap:10px;
+      touch-action:none;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background: linear-gradient(180deg, var(--panel), #0a1026cc);
+      backdrop-filter: blur(10px);
+      border: 1px solid #24305d80;
+      box-shadow: 0 8px 30px #00000055;
+      min-height:56px;
+    }
+    .title{
+      display:flex; flex-direction:column; gap:2px; min-width:0;
+    }
+    .title b{
+      font-size:14px; letter-spacing:0.3px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .title span{
+      font-size:12px; color:var(--muted);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .pills{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .pill{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      background:#0c1432cc;
+      border:1px solid #24305d80;
+      font-size:12px;
+      color:var(--text);
+      box-shadow: inset 0 1px 0 #ffffff10;
+    }
+    .dot{width:8px;height:8px;border-radius:99px;background:var(--good); box-shadow:0 0 14px #54f08b66;}
+    .btn{
+      appearance:none; border:1px solid #2b3a6b90; background: linear-gradient(180deg,#13204a,#0a1230);
+      color:var(--text); padding:9px 10px; border-radius:12px;
+      font-size:12px; cursor:pointer;
+      box-shadow: 0 10px 24px #00000045, inset 0 1px 0 #ffffff12;
+    }
+    .btn:active{transform: translateY(1px);}
+    .btn.secondary{background: linear-gradient(180deg,#101a3d,#0a1230);}
+    .btn.danger{border-color:#7a2b3a; background: linear-gradient(180deg,#3a1020,#200812);}
+    .btn.small{padding:8px 9px; border-radius:10px;}
+    .hud{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    }
+    #gameShell{
+      position:relative;
+      border-radius:16px;
+      overflow:hidden;
+      border: 1px solid #24305d80;
+      background: linear-gradient(180deg, #071020, #060915);
+      box-shadow: 0 20px 60px #00000080;
+      min-height:0;
+    }
+    canvas{
+      width:100%;
+      height:100%;
+      display:block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      background: radial-gradient(900px 700px at 40% 20%, #0d1638 0%, #070b16 60%, #05060b 100%);
+    }
+    .bottombar{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      padding:10px 12px;
+      border-radius:14px;
+      background: linear-gradient(180deg, var(--panel2), #0a1026ee);
+      border: 1px solid #24305d80;
+      box-shadow: 0 8px 30px #00000055;
+      flex-wrap:wrap;
+      min-height:56px;
+    }
+    .help{
+      font-size:12px; color:var(--muted);
+      line-height:1.25;
+    }
+    .kbd{
+      padding:2px 6px; border-radius:8px; border:1px solid #2b3a6b90;
+      background:#0c1432cc; color:var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size:11px;
+    }
+    .toast{
+      position:absolute; left:12px; top:12px;
+      padding:10px 12px;
+      border-radius:14px;
+      background: #0b122ae0;
+      border:1px solid #24305d80;
+      font-size:12px;
+      color:var(--text);
+      box-shadow: 0 14px 40px #00000070;
+      pointer-events:none;
+      transform: translateY(-10px);
+      opacity:0;
+      transition: opacity .18s ease, transform .18s ease;
+      max-width:min(520px, calc(100% - 24px));
+      line-height:1.25;
+    }
+    .toast.show{opacity:1; transform: translateY(0);}
+    .modal{
+      position:absolute; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      background: #00000080;
+      backdrop-filter: blur(6px);
+      padding:12px;
+    }
+    .modal.show{display:flex;}
+    .card{
+      width:min(560px, 100%);
+      background: linear-gradient(180deg,#0f1a3f,#080f26);
+      border:1px solid #2b3a6b90;
+      border-radius:18px;
+      padding:14px;
+      box-shadow: 0 24px 80px #000000aa;
+    }
+    .card h2{margin:0 0 8px 0; font-size:14px;}
+    .card p{margin:8px 0; font-size:12px; color:var(--muted); line-height:1.35;}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
+    .sliderRow{
+      display:grid; grid-template-columns: 1fr auto; gap:10px;
+      align-items:center;
+      margin:10px 0;
+    }
+    input[type="range"]{width:100%;}
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div class="topbar">
+      <div class="title">
+        <b>Andrei — Copper & Diamonds</b>
+        <span>Scava, prendi rame, evita i mob, spacca il boss</span>
+      </div>
+      <div class="pills">
+        <div class="pill" title="Stato">
+          <span class="dot" id="dot"></span>
+          <span id="statusTxt">READY</span>
+        </div>
+        <button class="btn small secondary" id="btnSettings">Impostazioni</button>
+        <button class="btn small" id="btnRestart">Restart</button>
+      </div>
+    </div>
+
+    <div id="gameShell">
+      <canvas id="c"></canvas>
+      <div class="toast" id="toast"></div>
+
+      <div class="modal" id="modal">
+        <div class="card">
+          <h2>Impostazioni</h2>
+          <p>
+            Rendering pixel: canvas interno a bassa risoluzione e scalato (nitido).
+            Tutto offline, un solo file.
+          </p>
+
+          <div class="sliderRow">
+            <div>
+              <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Qualità (risoluzione interna)</div>
+              <div style="font-size:12px; color:var(--muted);">Più alto = più fluido, ma più pesante.</div>
+            </div>
+            <div style="min-width:110px; text-align:right; font-size:12px; color:var(--muted);" id="qLabel"></div>
+          </div>
+          <input type="range" id="quality" min="1" max="4" step="1" value="3"/>
+
+          <div class="sliderRow">
+            <div>
+              <div style="font-size:12px; color:var(--text); margin-bottom:4px;">Volume</div>
+              <div style="font-size:12px; color:var(--muted);">WebAudio sintetico (no asset esterni).</div>
+            </div>
+            <div style="min-width:110px; text-align:right; font-size:12px; color:var(--muted);" id="vLabel"></div>
+          </div>
+          <input type="range" id="vol" min="0" max="100" step="1" value="70"/>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="btn secondary" id="btnClose">Chiudi</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div class="hud">
+        <div class="pill" title="Punti"><span>Score</span><b id="score" style="margin-left:6px;">0</b></div>
+        <div class="pill" title="Rame"><span>Cu</span><b id="cu" style="margin-left:6px;">0</b></div>
+        <div class="pill" title="Diamanti"><span>Dia</span><b id="dia" style="margin-left:6px;">0</b></div>
+        <div class="pill" title="Vita"><span>HP</span><b id="hp" style="margin-left:6px;">100</b></div>
+        <div class="pill" title="Boss"><span>Boss</span><b id="boss" style="margin-left:6px;">—</b></div>
+      </div>
+      <div class="help">
+        Touch: trascina per muovere il piccone, <span class="kbd">tieni premuto</span> per scavare. Desktop: mouse drag + hold. <span class="kbd">Space</span> dash, <span class="kbd">M</span> muto.
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // =========================================================
+  // Utility
+  // =========================================================
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  const irnd=(a,b)=>Math.floor(rnd(a,b+1));
+  const now=()=>performance.now();
+
+  function hash2(x,y){
+    // deterministic-ish noise
+    let n = x*374761393 + y*668265263;
+    n = (n^(n>>13))*1274126177;
+    return ((n^(n>>16))>>>0)/4294967295;
+  }
+
+  // =========================================================
+  // Canvas setup: low-res internal buffer scaled up (pixel)
+  // =========================================================
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { alpha:false, desynchronized:true });
+  ctx.imageSmoothingEnabled = false;
+
+  let DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  let quality = 3; // 1..4
+  const QUALITY_SCALE = [0, 0.55, 0.70, 0.85, 1.0]; // internal resolution multiplier
+
+  let W=0,H=0, iW=0,iH=0, scale=1;
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    W = Math.max(1, Math.floor(rect.width));
+    H = Math.max(1, Math.floor(rect.height));
+    const q = QUALITY_SCALE[quality];
+    iW = Math.max(320, Math.floor(W * q));
+    iH = Math.max(240, Math.floor(H * q));
+    canvas.width = Math.floor(iW * DPR);
+    canvas.height = Math.floor(iH * DPR);
+    scale = (canvas.width / iW); // DPR
+    ctx.setTransform(scale,0,0,scale,0,0);
+    ctx.imageSmoothingEnabled = false;
+  }
+  window.addEventListener('resize', resize);
+
+  // =========================================================
+  // UI
+  // =========================================================
+  const elScore = document.getElementById('score');
+  const elCu = document.getElementById('cu');
+  const elDia = document.getElementById('dia');
+  const elHp = document.getElementById('hp');
+  const elBoss = document.getElementById('boss');
+  const elStatus = document.getElementById('statusTxt');
+  const elDot = document.getElementById('dot');
+  const toast = document.getElementById('toast');
+
+  function setStatus(txt, good=true){
+    elStatus.textContent = txt;
+    elDot.style.background = good ? 'var(--good)' : 'var(--bad)';
+    elDot.style.boxShadow = good ? '0 0 14px #54f08b66' : '0 0 14px #ff5a7a66';
+  }
+  let toastT=0;
+  function showToast(msg, ms=1400){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    toastT = now() + ms;
+  }
+
+  // Settings modal
+  const modal = document.getElementById('modal');
+  const btnSettings = document.getElementById('btnSettings');
+  const btnClose = document.getElementById('btnClose');
+  const sliderQ = document.getElementById('quality');
+  const sliderV = document.getElementById('vol');
+  const qLabel = document.getElementById('qLabel');
+  const vLabel = document.getElementById('vLabel');
+
+  btnSettings.addEventListener('click', () => modal.classList.add('show'));
+  btnClose.addEventListener('click', () => modal.classList.remove('show'));
+  modal.addEventListener('pointerdown', (e)=>{ if(e.target === modal) modal.classList.remove('show'); });
+
+  // =========================================================
+  // Audio (WebAudio synth, no assets)
+  // =========================================================
+  let audioOn = true;
+  let masterVol = 0.7;
+  let AC = null, master = null;
+
+  function audioInit(){
+    if(AC) return;
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain();
+    master.gain.value = masterVol;
+    master.connect(AC.destination);
+  }
+  function beep({freq=440, dur=0.06, type='square', gain=0.18, slide=0, noise=0}){
+    if(!audioOn) return;
+    audioInit();
+    const t0 = AC.currentTime;
+    const g = AC.createGain();
+    g.gain.setValueAtTime(gain, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    if(noise>0){
+      // simple noise burst
+      const bufferSize = Math.max(1, Math.floor(AC.sampleRate * dur));
+      const buffer = AC.createBuffer(1, bufferSize, AC.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<bufferSize;i++){
+        data[i] = (Math.random()*2-1) * noise;
+      }
+      const src = AC.createBufferSource();
+      src.buffer = buffer;
+      src.connect(g);
+      g.connect(master);
+      src.start(t0);
+    }
+
+    const o = AC.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t0);
+    if(slide!==0) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq*(1+slide)), t0 + dur);
+    o.connect(g);
+    g.connect(master);
+    o.start(t0);
+    o.stop(t0 + dur);
+  }
+
+  function sfxMine(kind){
+    // kind: 'stone','copper','diamond','hurt','boom','tele'
+    if(kind==='stone') beep({freq:rnd(140,220), dur:rnd(0.03,0.055), type:'square', gain:0.16, slide:-0.15, noise:0.06});
+    if(kind==='copper') beep({freq:rnd(220,320), dur:rnd(0.04,0.07), type:'triangle', gain:0.20, slide:0.12, noise:0.05});
+    if(kind==='diamond') beep({freq:rnd(520,760), dur:rnd(0.06,0.09), type:'sine', gain:0.22, slide:0.18, noise:0.02});
+    if(kind==='hurt') beep({freq:rnd(90,120), dur:0.10, type:'sawtooth', gain:0.22, slide:-0.35, noise:0.04});
+    if(kind==='boom') beep({freq:80, dur:0.25, type:'sawtooth', gain:0.26, slide:-0.5, noise:0.18});
+    if(kind==='tele') beep({freq:rnd(280,360), dur:0.09, type:'square', gain:0.16, slide:0.35, noise:0.03});
+    if(kind==='ui') beep({freq:rnd(600,740), dur:0.04, type:'square', gain:0.12, slide:0.08, noise:0});
+  }
+
+  function setMute(m){
+    audioOn = !m;
+    if(master) master.gain.value = audioOn ? masterVol : 0;
+    showToast(audioOn ? 'Audio ON' : 'Audio OFF');
+  }
+
+  // sliders
+  function syncLabels(){
+    qLabel.textContent = ['—','Low','Med','High','Ultra'][quality];
+    vLabel.textContent = Math.round(masterVol*100)+'%';
+  }
+  sliderQ.value = String(quality);
+  sliderV.value = String(Math.round(masterVol*100));
+  syncLabels();
+
+  sliderQ.addEventListener('input', () => {
+    quality = parseInt(sliderQ.value,10);
+    syncLabels();
+    resize();
+    showToast('Qualità: ' + qLabel.textContent);
+    sfxMine('ui');
+  });
+  sliderV.addEventListener('input', () => {
+    masterVol = parseInt(sliderV.value,10)/100;
+    if(master) master.gain.value = audioOn ? masterVol : 0;
+    syncLabels();
+  });
+
+  // =========================================================
+  // Pixel-art sprites (generated)
+  // =========================================================
+  function makeSprite(pixels, scale=1){
+    // pixels: array of strings, each char is palette key
+    const h = pixels.length;
+    const w = pixels[0].length;
+    const cvs = document.createElement('canvas');
+    cvs.width = w*scale;
+    cvs.height = h*scale;
+    const c = cvs.getContext('2d');
+    c.imageSmoothingEnabled = false;
+    return {cvs, c, w, h, scale, pixels};
+  }
+  const PAL = {
+    '.': null,
+    's': '#6a6f80', // stone
+    'S': '#848aa1',
+    'd': '#2d3447', // deepslate
+    'D': '#3a4460',
+    'c': '#b45c2f', // copper
+    'C': '#d07a3b',
+    'o': '#4fd87a', // creeper green
+    'O': '#2da85b',
+    'e': '#2a223a', // ender dark
+    'E': '#4b3a6a',
+    'p': '#d6b2ad', // piglin-ish
+    'P': '#b77c79',
+    'x': '#12131a', // black
+    'w': '#eaf0ff', // white
+    'a': '#55e8ff', // diamond
+    'A': '#b7fbff',
+    'g': '#f2d16b', // gold accent
+    'G': '#ffd76a',
+  };
+
+  function renderSprite(sp){
+    const {c, w, h, scale, pixels} = sp;
+    c.clearRect(0,0,w*scale,h*scale);
+    for(let y=0;y<h;y++){
+      const row = pixels[y];
+      for(let x=0;x<w;x++){
+        const ch = row[x];
+        const col = PAL[ch];
+        if(!col) continue;
+        c.fillStyle = col;
+        c.fillRect(x*scale,y*scale,scale,scale);
+      }
+    }
+    return sp.cvs;
+  }
+
+  // Tiny mobs (original, minecraft-inspired proportions)
+  const SPR = {
+    pick: renderSprite(makeSprite([
+      "..ww........",
+      ".wwww.......",
+      "wwwwww......",
+      "..wwww......",
+      "...wwww.....",
+      "....wwww....",
+      ".....wwww...",
+      "......wwww..",
+      ".......wwww.",
+      "........wwww",
+      "........pppp",
+      "........pppp",
+    ], 1)),
+    creeper: renderSprite(makeSprite([
+      "...oooo....",
+      "..oOOOOo...",
+      "..oOxxOo...",
+      "..oOxxOo...",
+      "..oOOOOo...",
+      "...oooo....",
+      "...oOOo....",
+      "..ooOOoo...",
+      "..oOOOOo...",
+      "..oO..Oo...",
+      "..oO..Oo...",
+      "...o..o....",
+    ], 1)),
+    ender: renderSprite(makeSprite([
+      "...eeee....",
+      "..eEEEEe...",
+      "..eExxEe...",
+      "..eE..Ee...",
+      "..eEEEEe...",
+      "...eeee....",
+      "...eEEe....",
+      "..eeEEee...",
+      "..eEEEEe...",
+      "..eE..Ee...",
+      "..eE..Ee...",
+      "...e..e....",
+    ], 1)),
+    pig: renderSprite(makeSprite([
+      "...pppp....",
+      "..pPPPPp...",
+      "..pPxxPp...",
+      "..pP..Pp...",
+      "..pPPPPp...",
+      "...pppp....",
+      "...pGGp....",
+      "..ppGGpp...",
+      "..pPPPPp...",
+      "..pP..Pp...",
+      "..pP..Pp...",
+      "...p..p....",
+    ], 1)),
+  };
+
+  // =========================================================
+  // World: mining grid
+  // =========================================================
+  const TILE = 16; // internal pixels for a block
+  const GRID_W = 18;
+  const GRID_H = 26;
+
+  // block types
+  const BT = {
+    empty:0,
+    stone:1,
+    deepslate:2,
+    copper:3,
+    diamond:4,
+    bedrock:5,
+  };
+
+  function blockName(t){
+    if(t===BT.stone) return 'stone';
+    if(t===BT.deepslate) return 'stone';
+    if(t===BT.copper) return 'copper';
+    if(t===BT.diamond) return 'diamond';
+    return 'stone';
+  }
+
+  function blockHardness(t){
+    if(t===BT.stone) return 3;
+    if(t===BT.deepslate) return 4;
+    if(t===BT.copper) return 4;
+    if(t===BT.diamond) return 6;
+    if(t===BT.bedrock) return 999;
+    return 0;
+  }
+
+  // Procedural “texture” colors (distinct, no Mojang assets)
+  const TEX = {
+    stone: ['#5b6072','#6b7288','#7b829b','#4b5061'],
+    deep:  ['#262c3d','#2f364b','#3b4461','#1f2431'],
+    copper:['#a6542c','#b45c2f','#c06a3a','#d07a3b'],
+    diamond:['#27bcd2','#55e8ff','#b7fbff','#0f7e92'],
+    bed:   ['#0e0f14','#161820','#090a0f','#1b1d26'],
+  };
+
+  function texColor(type, x, y){
+    let arr = TEX.stone;
+    if(type===BT.deepslate) arr=TEX.deep;
+    if(type===BT.copper) arr=TEX.copper;
+    if(type===BT.diamond) arr=TEX.diamond;
+    if(type===BT.bedrock) arr=TEX.bed;
+    const n = hash2(x*17,y*19);
+    return arr[Math.floor(n*arr.length)];
+  }
+
+  // =========================================================
+  // Game State
+  // =========================================================
+  const state = {
+    running:true,
+    score:0,
+    cu:0,
+    dia:0,
+    hp:100,
+    combo:0,
+    comboT:0,
+    camShake:0,
+    camX:0, camY:0,
+    dashT:0,
+    level:1,
+    bossAlive:false,
+    bossPhase:0, // 0 stone,1 copper,2 diamond
+    bossHP:0,
+    bossHPMax:0,
+    bossX:0, bossY:0,
+    bossInv:0,
+    mobs:[],
+    particles:[],
+    cracks: new Map(), // key -> damage
+    grid: [],
+  };
+
+  // =========================================================
+  // Particles (pooled)
+  // =========================================================
+  const P_MAX = 900;
+  function spawnParticle(p){
+    if(state.particles.length >= P_MAX) return;
+    state.particles.push(p);
+  }
+  function burst(x,y, n, colA, colB, power=1){
+    for(let i=0;i<n;i++){
+      const a = rnd(0,Math.PI*2);
+      const sp = rnd(40,160)*power;
+      spawnParticle({
+        x,y,
+        vx: Math.cos(a)*sp,
+        vy: Math.sin(a)*sp - rnd(0,80)*power,
+        r: rnd(1.2,2.6)*power,
+        life: rnd(0.22,0.6),
+        t:0,
+        col: (Math.random()<0.5?colA:colB),
+        g: rnd(220, 520)*power,
+        drag: rnd(0.02,0.10),
+        glow: rnd(0,1)<0.4,
+      });
+    }
+  }
+
+  // =========================================================
+  // Input: pointer events (touch+mouse)
+  // =========================================================
+  const input = {
+    down:false,
+    x:0,y:0,
+    px:0,py:0,
+    worldX:0, worldY:0,
+    holdT:0,
+    id:null,
+  };
+
+  function screenToWorld(sx,sy){
+    // convert DOM pixel -> internal coords iW/iH
+    const rect = canvas.getBoundingClientRect();
+    const ux = (sx - rect.left) / rect.width;
+    const uy = (sy - rect.top) / rect.height;
+    const x = ux * iW;
+    const y = uy * iH;
+    return {x,y};
+  }
+
+  function onPointerDown(e){
+    // required on iOS: unlock audio on first gesture
+    if(!AC && audioOn){
+      try{ audioInit(); }catch(_){}
+    }
+    const p = screenToWorld(e.clientX, e.clientY);
+    input.down = true;
+    input.id = e.pointerId;
+    input.x = input.px = p.x;
+    input.y = input.py = p.y;
+    input.holdT = 0;
+    canvas.setPointerCapture(e.pointerId);
+  }
+  function onPointerMove(e){
+    if(input.id !== null && e.pointerId !== input.id) return;
+    const p = screenToWorld(e.clientX, e.clientY);
+    input.px = input.x; input.py = input.y;
+    input.x = p.x; input.y = p.y;
+  }
+  function onPointerUp(e){
+    if(input.id !== null && e.pointerId !== input.id) return;
+    input.down = false;
+    input.id = null;
+  }
+
+  canvas.addEventListener('pointerdown', onPointerDown, {passive:false});
+  canvas.addEventListener('pointermove', onPointerMove, {passive:false});
+  canvas.addEventListener('pointerup', onPointerUp, {passive:false});
+  canvas.addEventListener('pointercancel', onPointerUp, {passive:false});
+  canvas.addEventListener('contextmenu', (e)=>e.preventDefault());
+
+  // Keyboard
+  window.addEventListener('keydown', (e)=>{
+    if(e.code==='Space'){
+      state.dashT = 0.20;
+      showToast('Dash!');
+      sfxMine('ui');
+      e.preventDefault();
+    }
+    if(e.key.toLowerCase()==='m'){
+      setMute(audioOn);
+    }
+  }, {passive:false});
+
+  // Buttons
+  document.getElementById('btnRestart').addEventListener('click', () => resetAll(true));
+  // =========================================================
+  // World generation
+  // =========================================================
+  function resetAll(announce=false){
+    state.score=0; state.cu=0; state.dia=0; state.hp=100;
+    state.combo=0; state.comboT=0;
+    state.camShake=0; state.camX=0; state.camY=0;
+    state.dashT=0;
+    state.level=1;
+    state.bossAlive=false; state.bossPhase=0; state.bossHP=0; state.bossHPMax=0; state.bossInv=0;
+    state.mobs.length=0;
+    state.particles.length=0;
+    state.cracks.clear();
+    makeLevel();
+    setStatus('READY', true);
+    if(announce) showToast('Restart');
+  }
+
+  function makeLevel(){
+    // grid with copper emphasis, diamonds rarer, deepslate deeper, bedrock bottom
+    state.grid = new Array(GRID_H);
+    for(let y=0;y<GRID_H;y++){
+      state.grid[y] = new Array(GRID_W);
+      for(let x=0;x<GRID_W;x++){
+        let t = BT.stone;
+        const depth = y / (GRID_H-1);
+
+        // bedrock bottom row
+        if(y===GRID_H-1) t = BT.bedrock;
+        else if(depth > 0.68) t = BT.deepslate;
+
+        // ore blobs (procedural)
+        const n = hash2(x*3 + (y*7), y*5 + (x*11));
+        // copper higher probability (theme)
+        const copperChance = lerp(0.10, 0.22, 1 - Math.abs(depth-0.55)*1.6);
+        const diaChance = lerp(0.01, 0.05, clamp((depth-0.55)*1.6, 0, 1));
+
+        // Make "veins" by checking neighbors noise
+        const vein = (hash2(x+1,y)+hash2(x,y+1)+hash2(x-1,y)+hash2(x,y-1))*0.25;
+
+        if(t!==BT.bedrock){
+          if(vein > 0.74 && n < copperChance) t = BT.copper;
+          if(depth > 0.55 && vein > 0.78 && n < diaChance) t = BT.diamond;
+          // keep some stone variety
+          if(t===BT.stone && depth > 0.72 && n < 0.20) t = BT.deepslate;
+        }
+        state.grid[y][x] = t;
+      }
+    }
+
+    // boss spawn near bottom-middle
+    state.bossX = Math.floor(GRID_W/2);
+    state.bossY = GRID_H - 6;
+    spawnBoss();
+  }
+
+  // =========================================================
+  // Boss + mobs
+  // =========================================================
+  function spawnBoss(){
+    state.bossAlive = true;
+    state.bossPhase = 0;
+    state.bossHPMax = 140;
+    state.bossHP = state.bossHPMax;
+    state.bossInv = 0;
+    showToast('Boss: Golem di Pietra');
+    setStatus('BOSS', true);
+  }
+
+  function bossType(){
+    return (state.bossPhase===0) ? 'stone' : (state.bossPhase===1) ? 'copper' : 'diamond';
+  }
+
+  function bossName(){
+    if(state.bossPhase===0) return 'STONE';
+    if(state.bossPhase===1) return 'COPPER';
+    return 'DIAMOND';
+  }
+
+  function spawnMob(type){
+    // spawn near edges
+    const side = Math.random()<0.5 ? 0 : 1;
+    const x = side ? (GRID_W-1) : 0;
+    const y = irnd(2, GRID_H-8);
+    state.mobs.push({
+      type,
+      x: x + (side? 0.6 : 0.4),
+      y: y + 0.6,
+      vx:0, vy:0,
+      hp: type==='creeper'? 18 : type==='ender'? 22 : 26,
+      t:0,
+      a:0,
+      fuse: 0, // creeper
+      blink:0,
+      cd:0,
+    });
+  }
+
+  function updateSpawns(dt){
+    // ramp up difficulty with score / level
+    const threat = clamp( (state.score/900) + (state.level-1)*0.25, 0, 3.2 );
+    // spawn chance per second
+    const base = 0.18 + threat*0.10;
+    if(Math.random() < base*dt){
+      const r = Math.random();
+      if(r < 0.50) spawnMob('creeper');
+      else if(r < 0.82) spawnMob('pig');
+      else spawnMob('ender');
+    }
+  }
+
+  // =========================================================
+  // Mining / combat
+  // =========================================================
+  function gridAt(px,py){
+    const gx = Math.floor(px / TILE);
+    const gy = Math.floor(py / TILE);
+    if(gx<0||gy<0||gx>=GRID_W||gy>=GRID_H) return null;
+    return {gx,gy};
+  }
+
+  function keyXY(gx,gy){ return gx+','+gy; }
+
+  function mineAt(worldX, worldY){
+    const g = gridAt(worldX, worldY);
+    if(!g) return false;
+
+    // boss hit zone (3x3 around boss center)
+    if(state.bossAlive){
+      const bx = state.bossX, by = state.bossY;
+      const dx = g.gx - bx, dy = g.gy - by;
+      if(Math.abs(dx)<=1 && Math.abs(dy)<=1){
+        hitBoss(worldX, worldY);
+        return true;
+      }
+    }
+
+    const t = state.grid[g.gy][g.gx];
+    if(t===BT.empty) return false;
+    if(t===BT.bedrock){
+      // clang
+      sfxMine('stone');
+      burst(worldX, worldY, 10, '#cfd6ff', '#7a88b8', 0.9);
+      state.camShake = Math.min(10, state.camShake + 2);
+      return true;
+    }
+
+    const k = keyXY(g.gx,g.gy);
+    const cur = state.cracks.get(k) || 0;
+    const hard = blockHardness(t);
+    const next = cur + 1;
+    state.cracks.set(k, next);
+
+    // particles + sfx
+    const bn = (t===BT.copper)?'copper':(t===BT.diamond)?'diamond':'stone';
+    sfxMine(bn);
+    if(t===BT.copper) burst(worldX, worldY, 16, '#ffcf93', '#c06a3a', 1.0);
+    if(t===BT.diamond) burst(worldX, worldY, 18, '#b7fbff', '#55e8ff', 1.1);
+    if(t===BT.stone || t===BT.deepslate) burst(worldX, worldY, 12, '#b7c0de', '#4b5061', 0.9);
+
+    // break?
+    if(next >= hard){
+      state.cracks.delete(k);
+      state.grid[g.gy][g.gx] = BT.empty;
+
+      // reward
+      if(t===BT.copper){
+        state.cu++;
+        state.score += 20;
+        state.combo++;
+        state.comboT = 1.2;
+      }else if(t===BT.diamond){
+        state.dia++;
+        state.score += 90;
+        state.combo += 2;
+        state.comboT = 1.6;
+      }else{
+        state.score += 6;
+        state.combo = Math.max(0, state.combo-0.25);
+      }
+
+      // small chance heal on copper
+      if(t===BT.copper && Math.random()<0.10){
+        state.hp = Math.min(100, state.hp + 2);
+        showToast('+HP (rame)');
+      }
+
+      // level up by score thresholds
+      const newLevel = 1 + Math.floor(state.score / 1200);
+      if(newLevel !== state.level){
+        state.level = newLevel;
+        showToast('Livello '+state.level);
+        sfxMine('ui');
+      }
+      return true;
+    }
+    return true;
+  }
+
+  function hitBoss(wx, wy){
+    if(state.bossInv>0) return;
+    // damage depends on combo + dash
+    const dmg = 3 + Math.floor(clamp(state.combo,0,12)*0.25) + (state.dashT>0 ? 2 : 0);
+    state.bossHP -= dmg;
+    state.bossInv = 0.06;
+    state.camShake = Math.min(16, state.camShake + 3);
+
+    const bt = bossType();
+    if(bt==='stone'){
+      burst(wx, wy, 22, '#b7c0de', '#4b5061', 1.1);
+      sfxMine('stone');
+    }else if(bt==='copper'){
+      burst(wx, wy, 26, '#ffcf93', '#c06a3a', 1.2);
+      sfxMine('copper');
+    }else{
+      burst(wx, wy, 28, '#b7fbff', '#55e8ff', 1.25);
+      sfxMine('diamond');
+    }
+
+    if(state.bossHP <= 0){
+      advanceBossPhase();
+    }
+  }
+
+  function advanceBossPhase(){
+    state.bossPhase++;
+    if(state.bossPhase<=2){
+      // phase transition
+      state.camShake = 18;
+      sfxMine('boom');
+      for(let i=0;i<4;i++) burst((state.bossX+0.5)*TILE, (state.bossY+0.5)*TILE, 40, '#ffffff', '#ffcf93', 1.3);
+
+      if(state.bossPhase===1){
+        state.bossHPMax = 170;
+        state.bossHP = state.bossHPMax;
+        showToast('Boss: Golem di Rame');
+      }else{
+        state.bossHPMax = 210;
+        state.bossHP = state.bossHPMax;
+        showToast('Boss: Golem di Diamante');
+      }
+    }else{
+      // boss defeated
+      state.bossAlive = false;
+      setStatus('MINING', true);
+      showToast('Boss sconfitto! +bonus');
+      state.score += 900;
+      state.cu += 8;
+      state.dia += 2;
+      // spawn celebratory particles
+      for(let i=0;i<10;i++){
+        burst((state.bossX+0.5)*TILE, (state.bossY+0.5)*TILE, 45, '#b7fbff', '#c06a3a', 1.4);
+      }
+      // respawn boss later (soft loop)
+      setTimeout(() => {
+        // only if still alive
+        if(state.hp>0){
+          spawnBoss();
+          state.bossX = irnd(4, GRID_W-5);
+          state.bossY = GRID_H - irnd(6,9);
+        }
+      }, 3500);
+    }
+  }
+
+  // =========================================================
+  // Damage & mob AI
+  // =========================================================
+  function hurt(amount, kind='hurt'){
+    state.hp = Math.max(0, state.hp - amount);
+    state.camShake = Math.min(18, state.camShake + 6);
+    sfxMine(kind);
+    if(state.hp<=0){
+      setStatus('GAME OVER', false);
+      showToast('Game Over — Restart');
+    }
+  }
+
+  function updateMobs(dt){
+    const px = pick.worldX, py = pick.worldY;
+
+    for(let i=state.mobs.length-1;i>=0;i--){
+      const m = state.mobs[i];
+      m.t += dt;
+      m.cd = Math.max(0, m.cd - dt);
+      m.blink = Math.max(0, m.blink - dt);
+
+      // target: pickaxe position
+      const tx = px / TILE;
+      const ty = py / TILE;
+      let dx = tx - m.x;
+      let dy = ty - m.y;
+      const dist = Math.hypot(dx,dy) + 1e-6;
+      const nx = dx / dist, ny = dy / dist;
+
+      let sp = (m.type==='creeper') ? 1.25 : (m.type==='pig') ? 1.35 : 1.15;
+      sp *= (1 + clamp(state.level-1,0,6)*0.06);
+
+      if(m.type==='ender'){
+        // teleport sometimes, avoid "water" concept not present; just blink away and re-approach
+        if(m.cd<=0 && dist < 5.5 && Math.random()<0.5){
+          m.cd = rnd(1.2, 2.0);
+          m.blink = 0.12;
+          sfxMine('tele');
+          // teleport to a random near tile
+          m.x = clamp(m.x + rnd(-4.5,4.5), 1, GRID_W-2);
+          m.y = clamp(m.y + rnd(-3.0,3.0), 2, GRID_H-4);
+          burst(m.x*TILE, m.y*TILE, 18, '#cbb7ff', '#4b3a6a', 1.0);
+          continue;
+        }
+      }
+
+      // movement
+      m.vx = lerp(m.vx, nx*sp*2.0, clamp(dt*6,0,1));
+      m.vy = lerp(m.vy, ny*sp*2.0, clamp(dt*6,0,1));
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
+
+      // creeper fuse
+      if(m.type==='creeper'){
+        if(dist < 2.2){
+          m.fuse += dt;
+          // mimic ~1.5s fuse feel (not exact simulation) :contentReference[oaicite:3]{index=3}
+          if(m.fuse > 1.45){
+            // explode
+            burst(m.x*TILE, m.y*TILE, 80, '#ffffff', '#ff5a7a', 1.4);
+            sfxMine('boom');
+            state.camShake = 22;
+            const dmg = 18 + Math.floor(state.level*1.5);
+            hurt(dmg, 'boom');
+            state.mobs.splice(i,1);
+            continue;
+          }else{
+            // warning sparkle / hiss effect
+            if(Math.random()<0.35) burst(m.x*TILE, m.y*TILE, 6, '#ffffff', '#54f08b', 0.7);
+          }
+        }else{
+          m.fuse = Math.max(0, m.fuse - dt*0.9);
+        }
+      }
+
+      // contact damage
+      if(dist < 1.1){
+        if(m.cd<=0){
+          m.cd = 0.50;
+          hurt(6 + Math.floor(state.level*0.8), 'hurt');
+          burst(m.x*TILE, m.y*TILE, 20, '#ffb7c7', '#ff5a7a', 1.0);
+        }
+      }
+
+      // pickaxe can hit mobs (when holding, we "mine" continuously near tip)
+      // We'll check hit based on proximity to pick tip
+      const hx = pick.tipX / TILE, hy = pick.tipY / TILE;
+      const hdist = Math.hypot(hx - m.x, hy - m.y);
+      if(input.down && input.holdT>0.10 && hdist < 1.05){
+        // damage
+        const dmg = 3 + (state.dashT>0 ? 2 : 0) + Math.floor(clamp(state.combo,0,10)*0.2);
+        m.hp -= dmg;
+        m.blink = 0.08;
+        burst(m.x*TILE, m.y*TILE, 16, '#ffffff', '#9fb0ff', 0.9);
+        sfxMine('stone');
+        state.score += 10;
+        state.comboT = 1.2;
+        state.combo += 0.6;
+      }
+
+      if(m.hp<=0){
+        // drop bonus (copper biased)
+        if(Math.random()<0.55){ state.cu++; state.score += 24; burst(m.x*TILE,m.y*TILE,22,'#ffcf93','#c06a3a',1.0); }
+        else { state.score += 30; burst(m.x*TILE,m.y*TILE,18,'#b7fbff','#55e8ff',0.9); }
+        state.mobs.splice(i,1);
+      }
+    }
+  }
+
+  // =========================================================
+  // Pickaxe (controlled)
+  // =========================================================
+  const pick = {
+    worldX: TILE*8,
+    worldY: TILE*6,
+    tipX: 0,
+    tipY: 0,
+    ang: 0,
+    swing: 0,
+    swingV: 0,
+  };
+
+  function updatePick(dt){
+    // smooth follow pointer; dash adds speed
+    const dashBoost = (state.dashT>0) ? 2.2 : 1.0;
+    const targetX = input.x;
+    const targetY = input.y;
+    pick.worldX = lerp(pick.worldX, targetX, clamp(dt*(8*dashBoost),0,1));
+    pick.worldY = lerp(pick.worldY, targetY, clamp(dt*(8*dashBoost),0,1));
+
+    // angle from center to pointer movement
+    const vx = (input.x - input.px);
+    const vy = (input.y - input.py);
+    const mv = Math.hypot(vx,vy);
+    if(mv>0.2){
+      pick.ang = lerp(pick.ang, Math.atan2(vy,vx), clamp(dt*10,0,1));
+    }else{
+      pick.ang = lerp(pick.ang, pick.ang*0.98, clamp(dt*2,0,1));
+    }
+
+    // swing when holding
+    if(input.down){
+      input.holdT += dt;
+      const speed = (input.holdT>0.10) ? 1.0 : 0.0;
+      pick.swingV = lerp(pick.swingV, speed*12.0, clamp(dt*8,0,1));
+    }else{
+      input.holdT = 0;
+      pick.swingV = lerp(pick.swingV, 0, clamp(dt*10,0,1));
+    }
+    pick.swing += pick.swingV * dt;
+
+    // tip position (front of pick)
+    const reach = 22;
+    const sx = Math.cos(pick.ang + Math.sin(pick.swing)*0.6);
+    const sy = Math.sin(pick.ang + Math.sin(pick.swing)*0.6);
+    pick.tipX = pick.worldX + sx*reach;
+    pick.tipY = pick.worldY + sy*reach;
+  }
+
+  function doMining(dt){
+    // mine at tip while holding
+    if(!input.down) return;
+    if(input.holdT<0.10) return;
+
+    // mine rate: ~10 hits/sec
+    mineTimer -= dt;
+    if(mineTimer <= 0){
+      mineTimer = 0.10;
+      const ok = mineAt(pick.tipX, pick.tipY);
+      if(ok) state.camShake = Math.min(14, state.camShake + 0.6);
+    }
+  }
+  let mineTimer = 0;
+
+  // =========================================================
+  // Rendering
+  // =========================================================
+  function drawBackground(){
+    // subtle animated gradient bands
+    const t = now()*0.001;
+    ctx.fillStyle = '#05060b';
+    ctx.fillRect(0,0,iW,iH);
+
+    // fog layers
+    for(let i=0;i<3;i++){
+      const y = (Math.sin(t*0.6 + i*1.3)*0.5+0.5) * iH*0.35 + iH*(0.20+i*0.14);
+      const a = 0.10 + i*0.05;
+      ctx.fillStyle = `rgba(90,120,210,${a})`;
+      ctx.fillRect(0, y, iW, 2+i*2);
+    }
+  }
+
+  function drawGrid(){
+    // center world inside screen
+    const worldW = GRID_W * TILE;
+    const worldH = GRID_H * TILE;
+
+    // camera shake
+    let sx=0, sy=0;
+    if(state.camShake>0){
+      sx = rnd(-state.camShake, state.camShake);
+      sy = rnd(-state.camShake, state.camShake);
+    }
+    const ox = Math.floor((iW - worldW)/2 + sx);
+    const oy = Math.floor((iH - worldH)/2 + sy + 12);
+
+    // store camera for hitboxes etc
+    state.camX = ox; state.camY = oy;
+
+    // draw blocks
+    for(let gy=0;gy<GRID_H;gy++){
+      for(let gx=0;gx<GRID_W;gx++){
+        const t = state.grid[gy][gx];
+        if(t===BT.empty) continue;
+
+        const x = ox + gx*TILE;
+        const y = oy + gy*TILE;
+
+        // base
+        const base = texColor(t,gx,gy);
+        ctx.fillStyle = base;
+        ctx.fillRect(x,y,TILE,TILE);
+
+        // pixel speckles
+        const n = hash2(gx*9,gy*9);
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fillRect(x, y+TILE-2, TILE, 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.10)';
+        ctx.fillRect(x, y, TILE, 1);
+
+        // ore highlights
+        if(t===BT.copper){
+          const pulse = (Math.sin(now()*0.004 + (gx+gy)*0.7)*0.5+0.5);
+          ctx.fillStyle = `rgba(255, 200, 140, ${0.10 + pulse*0.10})`;
+          ctx.fillRect(x+1,y+1,TILE-2,TILE-2);
+        }
+        if(t===BT.diamond){
+          const pulse = (Math.sin(now()*0.006 + (gx+gy)*0.9)*0.5+0.5);
+          ctx.fillStyle = `rgba(120, 255, 255, ${0.12 + pulse*0.18})`;
+          ctx.fillRect(x+2,y+2,TILE-4,TILE-4);
+        }
+
+        // cracks overlay
+        const k = keyXY(gx,gy);
+        const dmg = state.cracks.get(k) || 0;
+        if(dmg>0){
+          const hard = blockHardness(t);
+          const pct = clamp(dmg/hard, 0, 1);
+          // draw crack lines
+          ctx.strokeStyle = `rgba(10, 10, 14, ${0.25 + pct*0.55})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          const cx = x+TILE/2, cy=y+TILE/2;
+          for(let i=0;i<4;i++){
+            const a = (i*Math.PI/2) + pct*0.8;
+            const r = TILE*(0.15 + pct*0.45);
+            ctx.moveTo(cx,cy);
+            ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r);
+          }
+          ctx.stroke();
+          ctx.fillStyle = `rgba(0,0,0,${0.10 + pct*0.12})`;
+          ctx.fillRect(x,y,TILE,TILE);
+        }
+      }
+    }
+
+    // boss on top
+    if(state.bossAlive){
+      drawBoss(ox,oy);
+    }
+
+    // mobs
+    drawMobs(ox,oy);
+
+    // pickaxe
+    drawPick();
+
+    // vignette
+    ctx.fillStyle = 'rgba(0,0,0,0.20)';
+    ctx.fillRect(0,0,iW,8);
+    ctx.fillRect(0,iH-10,iW,10);
+  }
+
+  function drawBoss(ox,oy){
+    const bx = ox + state.bossX*TILE;
+    const by = oy + state.bossY*TILE;
+    const t = bossType();
+
+    // aura
+    const pulse = (Math.sin(now()*0.004)*0.5+0.5);
+    const auraA = (t==='stone') ? `rgba(140,160,220,${0.10 + pulse*0.08})`
+               : (t==='copper') ? `rgba(255,180,120,${0.12 + pulse*0.10})`
+               : `rgba(110,255,255,${0.14 + pulse*0.12})`;
+
+    ctx.fillStyle = auraA;
+    ctx.fillRect(bx-10, by-10, TILE*3+20, TILE*3+20);
+
+    // 3x3 golem body
+    for(let dy=-1;dy<=1;dy++){
+      for(let dx=-1;dx<=1;dx++){
+        const gx = state.bossX+dx;
+        const gy = state.bossY+dy;
+        const x = bx + dx*TILE;
+        const y = by + dy*TILE;
+        let bt = BT.stone;
+        if(t==='copper') bt = BT.copper;
+        if(t==='diamond') bt = BT.diamond;
+        const base = texColor(bt,gx,gy);
+        ctx.fillStyle = base;
+        ctx.fillRect(x,y,TILE,TILE);
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fillRect(x, y+TILE-2, TILE, 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(x, y, TILE, 1);
+
+        // face (center)
+        if(dx===0 && dy===0){
+          ctx.fillStyle = 'rgba(0,0,0,0.35)';
+          ctx.fillRect(x+4,y+5,3,3);
+          ctx.fillRect(x+9,y+5,3,3);
+          ctx.fillStyle = (t==='diamond') ? 'rgba(85,232,255,0.9)' : 'rgba(255,255,255,0.55)';
+          ctx.fillRect(x+6,y+10,6,2);
+        }
+      }
+    }
+
+    // hit blink
+    if(state.bossInv>0){
+      ctx.fillStyle = `rgba(255,255,255,${0.25 + pulse*0.25})`;
+      ctx.fillRect(bx-2, by-2, TILE*3+4, TILE*3+4);
+    }
+  }
+
+  function drawMobs(ox,oy){
+    for(const m of state.mobs){
+      const x = ox + m.x*TILE;
+      const y = oy + m.y*TILE;
+      const img = (m.type==='creeper') ? SPR.creeper : (m.type==='ender') ? SPR.ender : SPR.pig;
+
+      // shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(x+8, y+14, 8, 3, 0, 0, Math.PI*2);
+      ctx.fill();
+
+      // fuse warning for creeper
+      if(m.type==='creeper' && m.fuse>0){
+        const pct = clamp(m.fuse/1.45, 0, 1);
+        ctx.fillStyle = `rgba(255,255,255,${0.10 + pct*0.30})`;
+        ctx.fillRect(x-1,y-1,12,12);
+      }
+
+      // blink for ender or on hit
+      if(m.blink>0){
+        ctx.globalAlpha = 0.35;
+      }
+      ctx.drawImage(img, Math.floor(x), Math.floor(y));
+      ctx.globalAlpha = 1;
+
+      // HP microbar
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(x, y-5, 12, 3);
+      ctx.fillStyle = '#54f08b';
+      ctx.fillRect(x, y-5, 12*clamp(m.hp/26,0,1), 3);
+    }
+  }
+
+  function drawPick(){
+    // draw as a sprite rotated around handle base (simple)
+    const img = SPR.pick;
+    const x = pick.worldX;
+    const y = pick.worldY;
+
+    const swing = Math.sin(pick.swing)*0.7;
+    const ang = pick.ang + swing;
+
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(ang);
+
+    // glow
+    const speedGlow = clamp(Math.abs(input.x-input.px)+Math.abs(input.y-input.py), 0, 24)/24;
+    const g = (input.down ? 0.14 : 0.06) + speedGlow*0.10;
+    ctx.fillStyle = `rgba(255,200,140,${g})`;
+    ctx.fillRect(-6,-6,26,12);
+
+    // pick sprite
+    ctx.drawImage(img, -8, -6);
+
+    ctx.restore();
+
+    // tip marker (invisible but can be debugged)
+    // ctx.fillStyle = 'rgba(255,0,0,0.4)';
+    // ctx.fillRect(pick.tipX-2,pick.tipY-2,4,4);
+  }
+
+  function drawParticles(dt){
+    for(let i=state.particles.length-1;i>=0;i--){
+      const p = state.particles[i];
+      p.t += dt;
+      if(p.t >= p.life){
+        state.particles.splice(i,1);
+        continue;
+      }
+      p.vx *= (1 - p.drag);
+      p.vy *= (1 - p.drag);
+      p.vy += p.g * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      const a = 1 - (p.t / p.life);
+      ctx.fillStyle = p.col;
+      if(p.glow){
+        ctx.globalAlpha = 0.20*a;
+        ctx.fillRect(p.x-p.r*2, p.y-p.r*2, p.r*4, p.r*4);
+      }
+      ctx.globalAlpha = 0.95*a;
+      ctx.fillRect(p.x-p.r, p.y-p.r, p.r*2, p.r*2);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawUI(){
+    // Boss bar overlay (inside canvas)
+    if(state.bossAlive){
+      const bw = Math.min(iW-40, 420);
+      const bx = (iW-bw)/2;
+      const by = 14;
+      const pct = clamp(state.bossHP/state.bossHPMax, 0, 1);
+
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(bx,by,bw,10);
+      const col = (state.bossPhase===0) ? '#9fb0ff' : (state.bossPhase===1) ? '#ffb55a' : '#55e8ff';
+      ctx.fillStyle = col;
+      ctx.fillRect(bx,by,bw*pct,10);
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.strokeRect(bx,by,bw,10);
+
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(bx, by-12, 110, 10);
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = '10px system-ui';
+      ctx.fillText('BOSS: '+bossName(), bx+6, by-4);
+    }
+
+    // combo hint
+    if(state.comboT>0){
+      ctx.globalAlpha = clamp(state.comboT, 0, 1);
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(12, iH-34, 140, 20);
+      ctx.fillStyle = '#eaf0ff';
+      ctx.font = '10px system-ui';
+      ctx.fillText('Combo x' + state.combo.toFixed(1), 20, iH-20);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // =========================================================
+  // Loop
+  // =========================================================
+  let tPrev = now();
+
+  function tick(){
+    const t = now();
+    let dt = (t - tPrev) / 1000;
+    tPrev = t;
+    dt = Math.min(dt, 0.033);
+
+    if(toastT && t>toastT){
+      toast.classList.remove('show');
+      toastT = 0;
+    }
+
+    if(state.hp<=0){
+      // render still
+      render(dt);
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    // decay
+    state.camShake = Math.max(0, state.camShake - dt*18);
+    state.comboT = Math.max(0, state.comboT - dt);
+    state.combo = Math.max(0, state.combo - dt*0.35);
+    state.dashT = Math.max(0, state.dashT - dt);
+    state.bossInv = Math.max(0, state.bossInv - dt);
+
+    updatePick(dt);
+    doMining(dt);
+    updateSpawns(dt);
+    updateMobs(dt);
+
+    // UI sync
+    elScore.textContent = Math.floor(state.score);
+    elCu.textContent = state.cu;
+    elDia.textContent = state.dia;
+    elHp.textContent = state.hp;
+    elBoss.textContent = state.bossAlive ? bossName() : '—';
+
+    render(dt);
+    requestAnimationFrame(tick);
+  }
+
+  function render(dt){
+    drawBackground();
+    drawGrid();
+    drawParticles(dt);
+    drawUI();
+  }
+
+  // =========================================================
+  // Boot
+  // =========================================================
+  document.getElementById('btnRestart').addEventListener('click', () => {
+    resetAll(true);
+    sfxMine('ui');
+  });
+
+  // global toggles
+  window.addEventListener('keydown', (e)=>{
+    if(e.key.toLowerCase()==='r'){
+      resetAll(true);
+      sfxMine('ui');
+    }
+  });
+
+  // click on status pill to toggle audio quickly
+  document.querySelector('.pill').addEventListener('click', () => {
+    setMute(audioOn);
+  });
+
+  resetAll(false);
+  resize();
+  setStatus('MINING', true);
+  showToast('Andrei: scava rame e diamanti');
+
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
