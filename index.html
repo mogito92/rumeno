@@ -1,1488 +1,486 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
-  <title>Andrei & il Culto del Rame — TNT Night Defense</title>
-  <style>
-    :root{
-      --bg0:#07070b;
-      --bg1:#0c1020;
-      --panel:#0b1225dd;
-      --stroke:#24305d80;
-      --text:#eaf0ff;
-      --muted:#b0bddc;
-      --good:#54f08b;
-      --bad:#ff5a7a;
-      --cu:#c06a3a;
-      --dia:#55e8ff;
-      --tnt:#ff4a4a;
-      --gold:#ffd66b;
-    }
-    html,body{height:100%; margin:0; background: radial-gradient(1200px 800px at 40% 15%, #111a3a 0%, var(--bg0) 65%, #05060b 100%); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
-    body{overflow:hidden;}
-    *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-    #wrap{
-      position:fixed; inset:0;
-      display:grid; grid-template-rows:auto 1fr auto;
-      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
-      gap:10px;
-      touch-action:none;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-    .bar{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:10px 12px;
-      border-radius:14px;
-      background: linear-gradient(180deg, var(--panel), #0a1026dd);
-      border:1px solid var(--stroke);
-      box-shadow: 0 10px 36px #00000070;
-      min-height:56px;
-    }
-    .title{display:flex; flex-direction:column; gap:2px; min-width:0;}
-    .title b{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .title span{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .pills{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
-    .pill{
-      display:flex; align-items:center; gap:8px;
-      padding:8px 10px;
-      border-radius:999px;
-      background:#0c1432cc;
-      border:1px solid var(--stroke);
-      font-size:12px;
-      box-shadow: inset 0 1px 0 #ffffff12;
-    }
-    .dot{width:8px;height:8px;border-radius:99px;background:var(--good); box-shadow:0 0 14px #54f08b66;}
-    .btn{
-      appearance:none; border:1px solid #2b3a6b90;
-      background: linear-gradient(180deg,#13204a,#0a1230);
-      color:var(--text);
-      padding:9px 10px;
-      border-radius:12px;
-      font-size:12px;
-      cursor:pointer;
-      box-shadow: 0 10px 24px #00000045, inset 0 1px 0 #ffffff12;
-    }
-    .btn:active{transform: translateY(1px);}
-    .btn.secondary{background: linear-gradient(180deg,#101a3d,#0a1230);}
-    .btn.danger{border-color:#7a2b3a; background: linear-gradient(180deg,#3a1020,#200812);}
-    .btn.small{padding:8px 9px; border-radius:10px;}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Andrei: Caccia al Rame</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-    #shell{
-      position:relative;
-      border-radius:16px;
-      overflow:hidden;
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, #071020, #060915);
-      box-shadow: 0 20px 70px #00000090;
-      min-height:0;
-    }
-    canvas{
-      width:100%;
-      height:100%;
-      display:block;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-      background: radial-gradient(900px 600px at 40% 20%, #0d1638 0%, #070b16 60%, #05060b 100%);
-    }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            touch-action: none; /* Impedisce zoom e scroll su Android */
+            font-family: 'Press Start 2P', cursive;
+        }
 
-    .bottom{
-      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
-      padding:10px 12px;
-      border-radius:14px;
-      background: linear-gradient(180deg, var(--panel), #0a1026dd);
-      border:1px solid var(--stroke);
-      box-shadow: 0 10px 36px #00000070;
-      min-height:56px;
-    }
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
 
-    .hud{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-    .help{font-size:12px; color:var(--muted); line-height:1.25;}
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            z-index: 10;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+        }
 
-    .toast{
-      position:absolute; left:12px; top:12px;
-      padding:10px 12px;
-      border-radius:14px;
-      background:#0b122ae0;
-      border:1px solid var(--stroke);
-      font-size:12px;
-      color:var(--text);
-      box-shadow: 0 14px 40px #00000070;
-      pointer-events:none;
-      transform: translateY(-10px);
-      opacity:0;
-      transition: opacity .16s ease, transform .16s ease;
-      max-width:min(520px, calc(100% - 24px));
-      line-height:1.25;
-      white-space:pre-line;
-    }
-    .toast.show{opacity:1; transform: translateY(0);}
+        .hud-text {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #FFD700;
+        }
 
-    /* On-screen controls overlays */
-    .padHint{
-      position:absolute; inset:0;
-      pointer-events:none;
-    }
-    .ctrl{
-      position:absolute;
-      display:flex; flex-direction:column; gap:8px;
-      pointer-events:auto;
-    }
-    .ctrl.left{left:12px; bottom:12px;}
-    .ctrl.right{right:12px; bottom:12px; align-items:flex-end;}
-    .miniRow{display:flex; gap:8px; justify-content:flex-end;}
-    .mini{
-      width:92px; height:44px;
-      border-radius:14px;
-      border:1px solid #2b3a6b90;
-      background: linear-gradient(180deg,#101a3d,#0a1230);
-      color:var(--text);
-      font-size:12px;
-      box-shadow: 0 10px 22px #00000060, inset 0 1px 0 #ffffff12;
-    }
-    .mini:active{transform: translateY(1px);}
-    .mini.tnt{border-color:#7a2b3a; background: linear-gradient(180deg,#3a1020,#200812);}
-    .mini.fire{border-color:#7a6a2b; background: linear-gradient(180deg,#2e2a10,#171408);}
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 20;
+            text-align: center;
+        }
 
-    .action{
-      width:104px; height:104px;
-      border-radius:999px;
-      border:1px solid #2b3a6b90;
-      background: radial-gradient(circle at 30% 25%, #1b2a61, #0a1230 70%);
-      color:var(--text);
-      font-weight:700;
-      font-size:12px;
-      box-shadow: 0 16px 34px #00000075, inset 0 1px 0 #ffffff12;
-    }
-    .action:active{transform: translateY(1px);}
-    .action small{display:block; font-weight:600; color:var(--muted); margin-top:2px;}
+        h1 { color: #e77f24; font-size: 24px; text-transform: uppercase; line-height: 1.5; }
+        p { font-size: 12px; color: #ccc; line-height: 1.8; max-width: 80%; }
+        
+        .btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background: #2ecc71;
+            border: 4px solid #27ae60;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+            animation: pulse 1s infinite;
+        }
 
-    /* Joystick visual */
-    .joy{
-      width:120px; height:120px;
-      border-radius:999px;
-      border:1px solid #2b3a6b90;
-      background: radial-gradient(circle at 30% 25%, #14204c, #0a1230 70%);
-      box-shadow: 0 16px 34px #00000075, inset 0 1px 0 #ffffff12;
-      position:relative;
-      overflow:hidden;
-    }
-    .joy::after{
-      content:"";
-      position:absolute;
-      left:50%; top:50%;
-      width:44px; height:44px;
-      border-radius:999px;
-      transform: translate(-50%,-50%);
-      background: radial-gradient(circle at 30% 25%, #263a82, #0f1b45 70%);
-      border:1px solid #2b3a6b90;
-      box-shadow: inset 0 1px 0 #ffffff12;
-      opacity:0.85;
-    }
-    .kbd{
-      padding:2px 6px; border-radius:8px;
-      border:1px solid #2b3a6b90;
-      background:#0c1432cc; color:var(--text);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size:11px;
-    }
-  </style>
+        .btn:active { background: #27ae60; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Effetto flash per TNT */
+        #flash {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+            z-index: 15;
+        }
+    </style>
 </head>
 <body>
-<div id="wrap">
-  <div class="bar">
-    <div class="title">
-      <b>Andrei & il Culto del Rame</b>
-      <span>Giorno: scava + TNT. Notte: difendi casa.</span>
-    </div>
-    <div class="pills">
-      <div class="pill" title="Stato">
-        <span class="dot" id="dot"></span>
-        <span id="modeTxt">GIORNO</span>
-      </div>
-      <button class="btn small secondary" id="btnAudio">Audio ON</button>
-      <button class="btn small" id="btnRestart">Restart</button>
-    </div>
-  </div>
 
-  <div id="shell">
-    <canvas id="c"></canvas>
-    <div class="toast" id="toast"></div>
-
-    <!-- On-screen controls -->
-    <div class="ctrl left">
-      <div class="joy" id="joy"></div>
+    <div id="ui">
+        <div class="hud-text">RAME: <span id="scoreVal">0</span> KG</div>
+        <div class="hud-text">VITA: <span id="healthVal">100</span>%</div>
+        <div class="hud-text" id="waveText" style="color:#aaf;">GIORNO: SCAVA!</div>
     </div>
 
-    <div class="ctrl right">
-      <div class="miniRow">
-        <button class="mini tnt" id="btnPlaceTNT">PIAZZA TNT</button>
-        <button class="mini fire" id="btnIgnite">ACCENDI</button>
-      </div>
-      <button class="action" id="btnAction">COLPISCI<br><small>hold = turbo</small></button>
+    <div id="startScreen">
+        <h1>Andrei<br>Cacciatore di Rame</h1>
+        <p>Ciao Andrei.<br>Tocca i blocchi per scavare.<br>Raccogli il RAME.<br>Usa la TNT per i nemici.<br>Non farti prendere il portafoglio.</p>
+        <button class="btn" onclick="startGame()">ANDIAMO!</button>
     </div>
-  </div>
 
-  <div class="bottom">
-    <div class="hud">
-      <div class="pill"><span>Score</span><b id="score" style="margin-left:6px;">0</b></div>
-      <div class="pill"><span style="color:var(--cu)">Cu</span><b id="cu" style="margin-left:6px;">0</b></div>
-      <div class="pill"><span style="color:var(--dia)">Dia</span><b id="dia" style="margin-left:6px;">0</b></div>
-      <div class="pill"><span style="color:var(--tnt)">TNT</span><b id="tnt" style="margin-left:6px;">0</b></div>
-      <div class="pill"><span>HP Andrei</span><b id="hp" style="margin-left:6px;">100</b></div>
-      <div class="pill"><span>HP Casa</span><b id="baseHp" style="margin-left:6px;">100</b></div>
-      <div class="pill"><span>Timer</span><b id="timer" style="margin-left:6px;">—</b></div>
+    <div id="gameOverScreen" style="display: none;">
+        <h1 style="color:red">SEI STATO PRESO!</h1>
+        <p>Hai perso tutto il rame...</p>
+        <p>Totale: <span id="finalScore">0</span> KG</p>
+        <button class="btn" onclick="startGame()">Riprova</button>
     </div>
-    <div class="help">
-      Android: joystick sinistra + tasto destro. Desktop: WASD + click/hold. <span class="kbd">E</span> piazza TNT, <span class="kbd">F</span> accendi, <span class="kbd">M</span> muto.
-    </div>
-  </div>
-</div>
+
+    <div id="flash"></div>
+    <canvas id="gameCanvas"></canvas>
 
 <script>
-(() => {
-  // ---------------------------------------------------------
-  // Utils
-  // ---------------------------------------------------------
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const lerp=(a,b,t)=>a+(b-a)*t;
-  const rnd=(a,b)=>a+Math.random()*(b-a);
-  const irnd=(a,b)=>Math.floor(rnd(a,b+1));
-  const now=()=>performance.now();
+    // --- SETUP ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('scoreVal');
+    const healthEl = document.getElementById('healthVal');
+    const waveEl = document.getElementById('waveText');
+    const flashEl = document.getElementById('flash');
+    
+    let width, height;
+    let particles = [];
+    let entities = [];
+    let score = 0;
+    let health = 100;
+    let gameRunning = false;
+    let frame = 0;
+    let difficulty = 1;
+    let isNight = false;
+    let dayCycleTimer = 0;
+    
+    // Audio Context (Synthesizer)
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
 
-  function hash2(x,y){
-    let n = x*374761393 + y*668265263;
-    n = (n^(n>>13))*1274126177;
-    return ((n^(n>>16))>>>0)/4294967295;
-  }
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
 
-  // ---------------------------------------------------------
-  // Canvas: pixel internal, scaled for Android
-  // ---------------------------------------------------------
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d', { alpha:false, desynchronized:true });
-  ctx.imageSmoothingEnabled = false;
-
-  let DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-  let W=0,H=0,iW=0,iH=0, scale=1;
-
-  // Android-first: internal resolution target
-  function resize(){
-    const r = canvas.getBoundingClientRect();
-    W = Math.max(1, Math.floor(r.width));
-    H = Math.max(1, Math.floor(r.height));
-    // render buffer ~ 720p-ish on tall phones, but clamped
-    const target = Math.min(900, Math.max(520, Math.floor(Math.min(W, H) * 1.15)));
-    const aspect = W / H;
-    iH = clamp(Math.floor(target), 480, 980);
-    iW = clamp(Math.floor(iH * aspect), 320, 980);
-
-    canvas.width = Math.floor(iW * DPR);
-    canvas.height = Math.floor(iH * DPR);
-    scale = canvas.width / iW;
-    ctx.setTransform(scale,0,0,scale,0,0);
-    ctx.imageSmoothingEnabled = false;
-  }
-  window.addEventListener('resize', resize);
-
-  // ---------------------------------------------------------
-  // UI
-  // ---------------------------------------------------------
-  const elMode = document.getElementById('modeTxt');
-  const elDot = document.getElementById('dot');
-  const elScore = document.getElementById('score');
-  const elCu = document.getElementById('cu');
-  const elDia = document.getElementById('dia');
-  const elTnt = document.getElementById('tnt');
-  const elHp = document.getElementById('hp');
-  const elBaseHp = document.getElementById('baseHp');
-  const elTimer = document.getElementById('timer');
-  const toast = document.getElementById('toast');
-
-  let toastT=0;
-  function showToast(msg, ms=1400){
-    toast.textContent = msg;
-    toast.classList.add('show');
-    toastT = now() + ms;
-  }
-  function setModeUI(day){
-    elMode.textContent = day ? 'GIORNO' : 'NOTTE';
-    elDot.style.background = day ? 'var(--good)' : 'var(--bad)';
-    elDot.style.boxShadow = day ? '0 0 14px #54f08b66' : '0 0 14px #ff5a7a66';
-  }
-
-  // ---------------------------------------------------------
-  // Audio (synth) + optional vibrate
-  // ---------------------------------------------------------
-  let audioOn = true;
-  let AC=null, master=null, masterVol=0.75;
-
-  function audioInit(){
-    if(AC) return;
-    AC = new (window.AudioContext || window.webkitAudioContext)();
-    master = AC.createGain();
-    master.gain.value = masterVol;
-    master.connect(AC.destination);
-  }
-  function beep({freq=440, dur=0.06, type='square', gain=0.18, slide=0, noise=0}){
-    if(!audioOn) return;
-    audioInit();
-    const t0 = AC.currentTime;
-
-    const g = AC.createGain();
-    g.gain.setValueAtTime(gain, t0);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    g.connect(master);
-
-    if(noise>0){
-      const bufferSize = Math.max(1, Math.floor(AC.sampleRate * dur));
-      const buffer = AC.createBuffer(1, bufferSize, AC.sampleRate);
-      const data = buffer.getChannelData(0);
-      for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * noise;
-      const src = AC.createBufferSource();
-      src.buffer = buffer;
-      src.connect(g);
-      src.start(t0);
+        if (type === 'hit') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        } else if (type === 'copper') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        } else if (type === 'tnt') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
     }
 
-    const o = AC.createOscillator();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t0);
-    if(slide!==0) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq*(1+slide)), t0 + dur);
-    o.connect(g);
-    o.start(t0);
-    o.stop(t0 + dur);
-  }
-  function sfx(kind){
-    if(kind==='hit') beep({freq:rnd(180,240), dur:rnd(0.03,0.06), type:'square', gain:0.16, slide:-0.12, noise:0.06});
-    if(kind==='cu') beep({freq:rnd(220,320), dur:rnd(0.04,0.07), type:'triangle', gain:0.20, slide:0.14, noise:0.05});
-    if(kind==='dia') beep({freq:rnd(560,820), dur:rnd(0.06,0.09), type:'sine', gain:0.22, slide:0.20, noise:0.02});
-    if(kind==='tnt') beep({freq:160, dur:0.08, type:'square', gain:0.18, slide:0.25, noise:0.03});
-    if(kind==='boom') beep({freq:70, dur:0.28, type:'sawtooth', gain:0.26, slide:-0.55, noise:0.18});
-    if(kind==='hurt') beep({freq:rnd(90,120), dur:0.10, type:'sawtooth', gain:0.22, slide:-0.35, noise:0.04});
-    if(kind==='ui') beep({freq:rnd(620,760), dur:0.04, type:'square', gain:0.12, slide:0.10, noise:0});
-  }
-  function vibr(ms){
-    try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){}
-  }
-
-  const btnAudio = document.getElementById('btnAudio');
-  btnAudio.addEventListener('click', ()=>{
-    audioOn = !audioOn;
-    if(master) master.gain.value = audioOn ? masterVol : 0;
-    btnAudio.textContent = audioOn ? 'Audio ON' : 'Audio OFF';
-    showToast(audioOn ? 'Audio ON' : 'Audio OFF');
-    sfx('ui');
-  });
-
-  // unlock audio on first interaction
-  window.addEventListener('pointerdown', () => { if(!AC && audioOn) { try{ audioInit(); }catch(_){ } } }, {once:true});
-
-  // ---------------------------------------------------------
-  // Sprites (tiny, original, pixel vibe)
-  // ---------------------------------------------------------
-  const PAL = {
-    '.': null,
-    'x':'#11131b',
-    'w':'#eaf0ff',
-    's':'#606779', 'S':'#7c839b',
-    'c':'#b45c2f', 'C':'#d07a3b',
-    'a':'#55e8ff', 'A':'#b7fbff',
-    'g':'#54f08b', 'G':'#2da85b',
-    'p':'#d6b2ad', 'P':'#b77c79',
-    'e':'#2a223a', 'E':'#4b3a6a',
-    'r':'#ff4a4a', 'R':'#ff8a8a',
-    'y':'#ffd66b', 'Y':'#fff0b1',
-  };
-  function makeSprite(pixels, scale=1){
-    const h=pixels.length, w=pixels[0].length;
-    const cvs=document.createElement('canvas');
-    cvs.width=w*scale; cvs.height=h*scale;
-    const c=cvs.getContext('2d'); c.imageSmoothingEnabled=false;
-    for(let y=0;y<h;y++){
-      for(let x=0;x<w;x++){
-        const col=PAL[pixels[y][x]];
-        if(!col) continue;
-        c.fillStyle=col;
-        c.fillRect(x*scale,y*scale,scale,scale);
-      }
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
     }
-    return cvs;
-  }
+    window.addEventListener('resize', resize);
+    resize();
 
-  const SPR = {
-    andrei: makeSprite([
-      "..wwww....",
-      ".wYYYYw...",
-      ".wYwwYw...",
-      ".wYwwYw...",
-      "..wwww....",
-      "..pPPp....",
-      "..pPPp....",
-      "..p..p....",
-      ".p....p...",
-      ".p....p...",
-      "..p..p....",
-      "..p..p....",
-    ], 1),
-    pick: makeSprite([
-      "..ww........",
-      ".wwww.......",
-      "wwwwww......",
-      "..wwww......",
-      "...wwww.....",
-      "....wwww....",
-      ".....wwww...",
-      "......wwww..",
-      ".......wwww.",
-      "........wwww",
-      "........pppp",
-      "........pppp",
-    ], 1),
-    creeper: makeSprite([
-      "...gggg....",
-      "..gGGGGg...",
-      "..gGxxGg...",
-      "..gGxxGg...",
-      "..gGGGGg...",
-      "...gggg....",
-      "...gGGg....",
-      "..ggGGgg...",
-      "..gGGGGg...",
-      "..gG..Gg...",
-      "..gG..Gg...",
-      "...g..g....",
-    ], 1),
-    ender: makeSprite([
-      "...eeee....",
-      "..eEEEEe...",
-      "..eExxEe...",
-      "..eE..Ee...",
-      "..eEEEEe...",
-      "...eeee....",
-      "...eEEe....",
-      "..eeEEee...",
-      "..eEEEEe...",
-      "..eE..Ee...",
-      "..eE..Ee...",
-      "...e..e....",
-    ], 1),
-    pig: makeSprite([
-      "...pppp....",
-      "..pPPPPp...",
-      "..pPxxPp...",
-      "..pP..Pp...",
-      "..pPPPPp...",
-      "...pppp....",
-      "...pYYp....",
-      "..ppYYpp...",
-      "..pPPPPp...",
-      "..pP..Pp...",
-      "..pP..Pp...",
-      "...p..p....",
-    ], 1),
-    tnt: makeSprite([
-      ".rrrrrrrr..",
-      "rRRRRRRRRr.",
-      "rRwwwwwwRr.",
-      "rRwwwwwwRr.",
-      "rRwwwwwwRr.",
-      "rRwwwwwwRr.",
-      "rRwwwwwwRr.",
-      "rRwwwwwwRr.",
-      "rRRRRRRRRr.",
-      ".rrrrrrrr..",
-      "..wwwwww...",
-      "..wTTTTw...",
-    ].map(row=>row.replaceAll('T','w')), 1)
-  };
+    // --- CLASSI ---
 
-  // ---------------------------------------------------------
-  // World (tile grid)
-  // ---------------------------------------------------------
-  const TILE = 16;
-  const GW = 22;
-  const GH = 30;
-
-  const BT = { empty:0, stone:1, deep:2, copper:3, diamond:4, tnt:5, base:6 };
-  const TEX = {
-    stone: ['#56607a','#6b7288','#7b829b','#444c62'],
-    deep:  ['#262c3d','#2f364b','#3b4461','#1f2431'],
-    copper:['#a6542c','#b45c2f','#c06a3a','#d07a3b'],
-    diamond:['#27bcd2','#55e8ff','#b7fbff','#0f7e92'],
-    tnt:   ['#ff4a4a','#ff8a8a','#f23a3a','#b82020'],
-    base:  ['#3c7a4f','#54f08b','#2e5f3d','#2a4a34'],
-  };
-  function tex(type,x,y){
-    let arr=TEX.stone;
-    if(type===BT.deep) arr=TEX.deep;
-    if(type===BT.copper) arr=TEX.copper;
-    if(type===BT.diamond) arr=TEX.diamond;
-    if(type===BT.tnt) arr=TEX.tnt;
-    if(type===BT.base) arr=TEX.base;
-    const n = hash2(x*17, y*19);
-    return arr[Math.floor(n*arr.length)];
-  }
-  function hardness(type){
-    if(type===BT.stone) return 2;
-    if(type===BT.deep) return 3;
-    if(type===BT.copper) return 3;
-    if(type===BT.diamond) return 5;
-    if(type===BT.tnt) return 1;
-    return 0;
-  }
-
-  // ---------------------------------------------------------
-  // State
-  // ---------------------------------------------------------
-  const S = {
-    grid: [],
-    cracks: new Map(), // "x,y" -> dmg
-    particles: [],
-    mobs: [],
-    tntPlaced: [], // {gx,gy, fuse}
-    score:0,
-    cu:0,
-    dia:0,
-    tnt:0,
-    hp:100,
-    baseHp:100,
-    day:true,
-    phaseT:0,
-    camShake:0,
-    msgCd:0,
-  };
-
-  const DAY_LEN = 28;  // seconds
-  const NIGHT_LEN = 22;
-
-  // Player
-  const P = {
-    x: 0, y: 0,
-    vx:0, vy:0,
-    dir:1,
-    atkCd:0,
-    mining:false,
-  };
-
-  // Base position
-  const BASE = { gx: Math.floor(GW/2), gy: 4 };
-
-  function keyXY(x,y){ return x+','+y; }
-
-  // ---------------------------------------------------------
-  // Generation
-  // ---------------------------------------------------------
-  function resetAll(announce=false){
-    S.score=0; S.cu=0; S.dia=0; S.tnt=0;
-    S.hp=100; S.baseHp=100;
-    S.day=true; S.phaseT=DAY_LEN;
-    S.camShake=0;
-    S.cracks.clear();
-    S.particles.length=0;
-    S.mobs.length=0;
-    S.tntPlaced.length=0;
-
-    // player spawn near base
-    P.x = (BASE.gx+0.5)*TILE;
-    P.y = (BASE.gy+3.5)*TILE;
-    P.vx=0; P.vy=0; P.atkCd=0;
-
-    makeWorld();
-    setModeUI(true);
-    showToast("Andrei: \"Hai! Cu e viață.\" \nGiorno: scava rame + TNT.\nNotte: difendi casa.");
-    if(announce) sfx('ui');
-  }
-
-  function makeWorld(){
-    S.grid = new Array(GH);
-    for(let y=0;y<GH;y++){
-      S.grid[y] = new Array(GW).fill(BT.stone);
-      for(let x=0;x<GW;x++){
-        let t = BT.stone;
-        const depth = y/(GH-1);
-
-        // open air at top region for base area
-        if(y < 7) t = BT.empty;
-        else{
-          if(depth > 0.62) t = BT.deep;
-          const n = hash2(x*3 + y*7, y*5 + x*11);
-          const vein = (hash2(x+1,y)+hash2(x,y+1)+hash2(x-1,y)+hash2(x,y-1))*0.25;
-
-          // copper: frequent
-          const cuChance = lerp(0.12, 0.26, 1 - Math.abs(depth-0.55)*1.7);
-          // diamond: rarer
-          const diaChance = lerp(0.01, 0.05, clamp((depth-0.58)*1.8, 0, 1));
-          // TNT: meme rare but present
-          const tntChance = lerp(0.02, 0.06, clamp((depth-0.50)*1.4, 0, 1));
-
-          if(vein > 0.74 && n < cuChance) t = BT.copper;
-          if(depth > 0.58 && vein > 0.79 && n < diaChance) t = BT.diamond;
-          if(vein > 0.76 && n > 0.55 && n < 0.55+tntChance) t = BT.tnt;
+    class Entity {
+        constructor(type) {
+            this.size = width < 600 ? 50 : 70; // Grandezza adattiva
+            this.x = Math.random() * (width - this.size);
+            this.y = -this.size;
+            this.type = type;
+            this.markedForDeletion = false;
+            
+            // Velocità basata sulla difficoltà
+            this.speed = (Math.random() * 2 + 2) * (1 + difficulty * 0.1);
+            
+            // Proprietà visuali
+            if (type === 'copper') {
+                this.color = '#e77f24'; // Rame
+                this.hp = 1;
+                this.score = 5;
+            } else if (type === 'diamond') {
+                this.color = '#00ffff';
+                this.hp = 2;
+                this.score = 50;
+                this.speed *= 1.5; // Più veloce
+            } else if (type === 'stone') {
+                this.color = '#7d7d7d';
+                this.hp = 3;
+                this.score = 1;
+            } else if (type === 'tnt') {
+                this.color = '#ff0000';
+                this.hp = 1;
+                this.score = 0;
+            } else if (type === 'creeper') {
+                this.color = '#00aa00';
+                this.hp = 2;
+                this.damage = 20;
+            } else if (type === 'enderman') {
+                this.color = '#111';
+                this.hp = 4;
+                this.damage = 30;
+                this.speed *= 1.3;
+            }
         }
 
-        S.grid[y][x] = t;
-      }
-    }
-
-    // place base blocks (a small 3x3)
-    for(let dy=-1; dy<=1; dy++){
-      for(let dx=-1; dx<=1; dx++){
-        const gx = BASE.gx+dx, gy = BASE.gy+dy;
-        if(gx>=0 && gx<GW && gy>=0 && gy<GH){
-          S.grid[gy][gx] = BT.base;
-        }
-      }
-    }
-  }
-
-  // ---------------------------------------------------------
-  // Particles
-  // ---------------------------------------------------------
-  const P_MAX=800;
-  function spawnParticle(p){
-    if(S.particles.length>=P_MAX) return;
-    S.particles.push(p);
-  }
-  function burst(x,y, n, colA, colB, power=1){
-    for(let i=0;i<n;i++){
-      const a = rnd(0, Math.PI*2);
-      const sp = rnd(40, 160)*power;
-      spawnParticle({
-        x,y,
-        vx: Math.cos(a)*sp,
-        vy: Math.sin(a)*sp - rnd(0,80)*power,
-        r: rnd(1.2,2.8)*power,
-        life: rnd(0.22,0.60),
-        t:0,
-        col: (Math.random()<0.5?colA:colB),
-        g: rnd(220, 520)*power,
-        drag: rnd(0.02,0.10),
-        glow: Math.random()<0.35,
-      });
-    }
-  }
-
-  // ---------------------------------------------------------
-  // Input: joystick + action (multi-pointer)
-  // ---------------------------------------------------------
-  const joyEl = document.getElementById('joy');
-  const btnAction = document.getElementById('btnAction');
-  const btnPlaceTNT = document.getElementById('btnPlaceTNT');
-  const btnIgnite = document.getElementById('btnIgnite');
-
-  const input = {
-    joyId:null, actId:null,
-    joy: {active:false, cx:0, cy:0, x:0, y:0},
-    act: {down:false, hold:0},
-    keys: {w:false,a:false,s:false,d:false},
-    wantPlace:false,
-    wantIgnite:false,
-  };
-
-  function rectCenter(el){
-    const r = el.getBoundingClientRect();
-    return { cx: r.left + r.width/2, cy: r.top + r.height/2, w:r.width, h:r.height };
-  }
-
-  function pointerIn(el, clientX, clientY){
-    const r = el.getBoundingClientRect();
-    return clientX>=r.left && clientX<=r.right && clientY>=r.top && clientY<=r.bottom;
-  }
-
-  function joyDown(e){
-    e.preventDefault();
-    if(input.joyId!==null) return;
-    input.joyId = e.pointerId;
-    const c = rectCenter(joyEl);
-    input.joy.active = true;
-    input.joy.cx = c.cx;
-    input.joy.cy = c.cy;
-    input.joy.x = 0;
-    input.joy.y = 0;
-    joyEl.setPointerCapture(e.pointerId);
-  }
-  function joyMove(e){
-    if(e.pointerId !== input.joyId) return;
-    e.preventDefault();
-    const dx = e.clientX - input.joy.cx;
-    const dy = e.clientY - input.joy.cy;
-    const max = 42;
-    const nx = clamp(dx/max, -1, 1);
-    const ny = clamp(dy/max, -1, 1);
-    input.joy.x = nx;
-    input.joy.y = ny;
-  }
-  function joyUp(e){
-    if(e.pointerId !== input.joyId) return;
-    e.preventDefault();
-    input.joyId = null;
-    input.joy.active = false;
-    input.joy.x = 0;
-    input.joy.y = 0;
-  }
-
-  joyEl.addEventListener('pointerdown', joyDown, {passive:false});
-  joyEl.addEventListener('pointermove', joyMove, {passive:false});
-  joyEl.addEventListener('pointerup', joyUp, {passive:false});
-  joyEl.addEventListener('pointercancel', joyUp, {passive:false});
-
-  function actDown(e){
-    e.preventDefault();
-    if(input.actId!==null) return;
-    input.actId = e.pointerId;
-    input.act.down = true;
-    input.act.hold = 0;
-    btnAction.setPointerCapture(e.pointerId);
-  }
-  function actUp(e){
-    if(e.pointerId !== input.actId) return;
-    e.preventDefault();
-    input.actId = null;
-    input.act.down = false;
-    input.act.hold = 0;
-  }
-  btnAction.addEventListener('pointerdown', actDown, {passive:false});
-  btnAction.addEventListener('pointerup', actUp, {passive:false});
-  btnAction.addEventListener('pointercancel', actUp, {passive:false});
-
-  btnPlaceTNT.addEventListener('click', ()=>{
-    input.wantPlace = true;
-    sfx('tnt');
-  });
-  btnIgnite.addEventListener('click', ()=>{
-    input.wantIgnite = true;
-    sfx('tnt');
-  });
-
-  // Desktop keys + mouse click as action
-  window.addEventListener('keydown', (e)=>{
-    const k = e.key.toLowerCase();
-    if(k==='w') input.keys.w=true;
-    if(k==='a') input.keys.a=true;
-    if(k==='s') input.keys.s=true;
-    if(k==='d') input.keys.d=true;
-    if(k==='e') input.wantPlace = true;
-    if(k==='f') input.wantIgnite = true;
-    if(k==='m'){
-      audioOn = !audioOn;
-      if(master) master.gain.value = audioOn ? masterVol : 0;
-      btnAudio.textContent = audioOn ? 'Audio ON' : 'Audio OFF';
-      showToast(audioOn ? 'Audio ON' : 'Audio OFF');
-      sfx('ui');
-    }
-  });
-  window.addEventListener('keyup', (e)=>{
-    const k = e.key.toLowerCase();
-    if(k==='w') input.keys.w=false;
-    if(k==='a') input.keys.a=false;
-    if(k==='s') input.keys.s=false;
-    if(k==='d') input.keys.d=false;
-  });
-  canvas.addEventListener('pointerdown', (e)=>{
-    // desktop: click on canvas triggers action
-    if(pointerIn(btnAction, e.clientX, e.clientY) || pointerIn(joyEl, e.clientX, e.clientY)) return;
-    input.act.down = true;
-    input.actId = e.pointerId;
-    input.act.hold = 0;
-    canvas.setPointerCapture(e.pointerId);
-  }, {passive:false});
-  canvas.addEventListener('pointerup', (e)=>{
-    if(e.pointerId!==input.actId) return;
-    input.act.down=false; input.actId=null; input.act.hold=0;
-  }, {passive:false});
-
-  // ---------------------------------------------------------
-  // Coordinate helpers
-  // ---------------------------------------------------------
-  function worldToScreenOffsets(){
-    const worldW = GW*TILE;
-    const worldH = GH*TILE;
-    const sx = (S.camShake>0) ? rnd(-S.camShake,S.camShake) : 0;
-    const sy = (S.camShake>0) ? rnd(-S.camShake,S.camShake) : 0;
-    const ox = Math.floor((iW-worldW)/2 + sx);
-    const oy = Math.floor((iH-worldH)/2 + sy + 10);
-    return {ox,oy};
-  }
-  function tileAt(wx,wy){
-    const gx = Math.floor(wx / TILE);
-    const gy = Math.floor(wy / TILE);
-    if(gx<0||gy<0||gx>=GW||gy>=GH) return null;
-    return {gx,gy};
-  }
-
-  // ---------------------------------------------------------
-  // Combat / Mining
-  // ---------------------------------------------------------
-  function hurtPlayer(dmg){
-    S.hp = Math.max(0, S.hp - dmg);
-    S.camShake = Math.min(18, S.camShake + 6);
-    burst(P.x, P.y, 20, '#ffb7c7', '#ff5a7a', 1.0);
-    sfx('hurt');
-    vibr(20);
-    if(S.hp<=0){
-      showToast("Andrei: \"Nu... Cu...\" \nGAME OVER.");
-    }
-  }
-  function hurtBase(dmg){
-    S.baseHp = Math.max(0, S.baseHp - dmg);
-    S.camShake = Math.min(18, S.camShake + 7);
-    burst((BASE.gx+0.5)*TILE, (BASE.gy+0.5)*TILE, 26, '#ffd66b', '#ff5a7a', 1.1);
-    sfx('hurt');
-    vibr(25);
-    if(S.baseHp<=0){
-      showToast("Casa distrutta.\nAndrei: \"Băi... creeper...\" \nGAME OVER.");
-    }
-  }
-
-  function mineOrHit(){
-    if(P.atkCd>0) return;
-    P.atkCd = 0.12;
-
-    // swing zone in front of player
-    const reach = 18;
-    const ax = P.x + P.dir*reach;
-    const ay = P.y;
-
-    // hit mobs first
-    for(let i=S.mobs.length-1;i>=0;i--){
-      const m = S.mobs[i];
-      const d = Math.hypot((m.x-ax),(m.y-ay));
-      if(d < 14){
-        m.hp -= 6 + (S.day?1:2);
-        burst(m.x,m.y,16,'#ffffff','#9fb0ff',0.9);
-        sfx('hit');
-        vibr(10);
-        if(m.type==='creeper' && Math.random()<0.30){
-          // occasionally accelerate creeper fuse for meme chaos
-          m.fuse += 0.25;
-        }
-        if(m.hp<=0){
-          // drops
-          if(Math.random()<0.60){ S.cu++; S.score+=20; burst(m.x,m.y,22,'#ffcf93','#c06a3a',1.0); sfx('cu'); }
-          else { S.score+=24; burst(m.x,m.y,18,'#b7fbff','#55e8ff',0.9); }
-          if(Math.random()<0.12){ S.tnt++; burst(m.x,m.y,14,'#ff8a8a','#ff4a4a',1.0); sfx('tnt'); }
-          S.mobs.splice(i,1);
-        }
-        return;
-      }
-    }
-
-    // if no mob hit: mine block
-    const g = tileAt(ax, ay);
-    if(!g) return;
-    const t = S.grid[g.gy][g.gx];
-    if(t===BT.empty || t===BT.base) { sfx('hit'); return; }
-
-    const k = keyXY(g.gx,g.gy);
-    const cur = S.cracks.get(k)||0;
-    const hard = hardness(t);
-    const next = cur+1;
-    S.cracks.set(k,next);
-
-    if(t===BT.copper){ sfx('cu'); burst(ax,ay,14,'#ffcf93','#c06a3a',1.0); }
-    else if(t===BT.diamond){ sfx('dia'); burst(ax,ay,16,'#b7fbff','#55e8ff',1.1); }
-    else if(t===BT.tnt){ sfx('tnt'); burst(ax,ay,16,'#ff8a8a','#ff4a4a',1.0); }
-    else { sfx('hit'); burst(ax,ay,10,'#b7c0de','#4b5061',0.9); }
-
-    if(next>=hard){
-      S.cracks.delete(k);
-      S.grid[g.gy][g.gx]=BT.empty;
-      if(t===BT.copper){
-        S.cu++; S.score+=18;
-        if(S.msgCd<=0 && Math.random()<0.20){
-          S.msgCd = 2.0;
-          showToast("Andrei: \"Cu! Cu! Cu!\" \nRAME SUPREMO.");
-        }
-      }else if(t===BT.diamond){
-        S.dia++; S.score+=80;
-        showToast("DIAMANTE preso.\nAndrei: \"Ehe... scump!\"");
-      }else if(t===BT.tnt){
-        S.tnt++; S.score+=26;
-        showToast("TNT trovato.\nAndrei: \"Hehe. Boom time.\"");
-      }else{
-        S.score+=5;
-      }
-    }
-  }
-
-  function placeTNT(){
-    if(S.tnt<=0) { showToast("Zero TNT.\nAndrei: \"Nu avem...\""); return; }
-    const gx = Math.floor(P.x/TILE);
-    const gy = Math.floor(P.y/TILE)+1;
-    if(gx<0||gy<0||gx>=GW||gy>=GH) return;
-    if(S.grid[gy][gx] !== BT.empty) { showToast("Qui non ci sta."); return; }
-    S.tnt--;
-    S.tntPlaced.push({gx,gy,fuse:0});
-    showToast("TNT piazzata.");
-    sfx('tnt');
-    burst((gx+0.5)*TILE,(gy+0.5)*TILE,14,'#ff8a8a','#ff4a4a',1.0);
-  }
-
-  function igniteTNT(){
-    if(S.tntPlaced.length===0){ showToast("Niente TNT piazzata."); return; }
-    // ignite nearest TNT
-    let best=-1, bestD=1e9;
-    for(let i=0;i<S.tntPlaced.length;i++){
-      const t = S.tntPlaced[i];
-      const x=(t.gx+0.5)*TILE, y=(t.gy+0.5)*TILE;
-      const d=Math.hypot(P.x-x,P.y-y);
-      if(d<bestD){ bestD=d; best=i; }
-    }
-    if(best>=0){
-      S.tntPlaced[best].fuse = 0.01; // start fuse
-      showToast("Accesa. Scappa.");
-      sfx('tnt');
-      vibr(10);
-    }
-  }
-
-  function explode(gx,gy){
-    sfx('boom');
-    S.camShake = 22;
-    burst((gx+0.5)*TILE,(gy+0.5)*TILE,90,'#ffffff','#ff4a4a',1.4);
-    vibr(40);
-
-    // radius
-    const R = 3;
-    for(let y=gy-R;y<=gy+R;y++){
-      for(let x=gx-R;x<=gx+R;x++){
-        if(x<0||y<0||x>=GW||y>=GH) continue;
-        const d = Math.hypot(x-gx,y-gy);
-        if(d>R+0.1) continue;
-
-        const t = S.grid[y][x];
-
-        // clear blocks (except base)
-        if(t!==BT.empty && t!==BT.base){
-          S.grid[y][x]=BT.empty;
-          S.cracks.delete(keyXY(x,y));
-          // drop some loot
-          if(t===BT.copper){ S.cu++; S.score+=12; }
-          if(t===BT.diamond){ if(Math.random()<0.30){ S.dia++; S.score+=60; } }
-          if(t===BT.tnt){ S.tnt++; S.score+=14; }
-        }
-      }
-    }
-
-    // damage mobs
-    for(let i=S.mobs.length-1;i>=0;i--){
-      const m=S.mobs[i];
-      const mgx=Math.floor(m.x/TILE), mgy=Math.floor(m.y/TILE);
-      const d=Math.hypot(mgx-gx,mgy-gy);
-      if(d<=R+0.2){
-        m.hp -= 40;
-        burst(m.x,m.y,40,'#ffffff','#ff5a7a',1.2);
-        if(m.hp<=0) S.mobs.splice(i,1);
-      }
-    }
-
-    // self/base damage if close (meme: TNT is TNT)
-    const pgx=Math.floor(P.x/TILE), pgy=Math.floor(P.y/TILE);
-    if(Math.hypot(pgx-gx,pgy-gy)<=R-0.2) hurtPlayer(22);
-
-    if(Math.hypot(BASE.gx-gx, BASE.gy-gy)<=R-0.2) hurtBase(18);
-
-    // copper meme
-    if(Math.random()<0.35){
-      showToast("BOOM.\nAndrei: \"Rame + TNT = artă.\"");
-    }
-  }
-
-  // ---------------------------------------------------------
-  // Mobs
-  // ---------------------------------------------------------
-  function spawnMob(){
-    // spawn at bottom edges during night; light spawns sometimes
-    const side = Math.random()<0.5 ? 0 : 1;
-    const gx = side ? (GW-2) : 1;
-    const gy = GH-2;
-    const r=Math.random();
-    const type = (r<0.50) ? 'creeper' : (r<0.80) ? 'pig' : 'ender';
-    S.mobs.push({
-      type,
-      x:(gx+0.5)*TILE,
-      y:(gy+0.5)*TILE,
-      vx:0, vy:0,
-      hp: (type==='creeper')?18:(type==='ender')?22:26,
-      cd:0,
-      fuse:0,
-      blink:0
-    });
-  }
-
-  function updateMobs(dt){
-    for(let i=S.mobs.length-1;i>=0;i--){
-      const m=S.mobs[i];
-      m.cd = Math.max(0,m.cd-dt);
-      m.blink = Math.max(0,m.blink-dt);
-
-      // target base at night, player at day
-      const tx = (S.day ? P.x : (BASE.gx+0.5)*TILE);
-      const ty = (S.day ? P.y : (BASE.gy+0.5)*TILE);
-
-      let dx=tx-m.x, dy=ty-m.y;
-      const dist=Math.hypot(dx,dy)+1e-6;
-      const nx=dx/dist, ny=dy/dist;
-
-      let sp = S.day ? 42 : 58;
-      if(m.type==='pig') sp += 8;
-      if(m.type==='ender') sp -= 6;
-
-      // ender teleport sometimes at night
-      if(!S.day && m.type==='ender' && m.cd<=0 && dist<210 && Math.random()<0.018){
-        m.cd = 1.6;
-        m.blink = 0.12;
-        sfx('ui');
-        burst(m.x,m.y,18,'#cbb7ff','#4b3a6a',1.0);
-        m.x = clamp(m.x + rnd(-140,140), TILE*2, (GW-2)*TILE);
-        m.y = clamp(m.y + rnd(-120,120), TILE*6, (GH-2)*TILE);
-        burst(m.x,m.y,18,'#cbb7ff','#4b3a6a',1.0);
-      }
-
-      m.vx = lerp(m.vx, nx*sp, clamp(dt*8,0,1));
-      m.vy = lerp(m.vy, ny*sp, clamp(dt*8,0,1));
-      m.x += m.vx*dt;
-      m.y += m.vy*dt;
-
-      // creeper fuse: if close to base or player
-      if(m.type==='creeper'){
-        const nearTarget = dist < (S.day ? 60 : 70);
-        if(nearTarget) m.fuse += dt;
-        else m.fuse = Math.max(0, m.fuse - dt*0.7);
-
-        if(m.fuse>1.55){
-          // explode
-          const gx=Math.floor(m.x/TILE), gy=Math.floor(m.y/TILE);
-          explode(gx,gy);
-          S.mobs.splice(i,1);
-          continue;
-        }
-      }
-
-      // hit base at night
-      if(!S.day){
-        const bd = Math.hypot(m.x-((BASE.gx+0.5)*TILE), m.y-((BASE.gy+0.5)*TILE));
-        if(bd<26 && m.cd<=0){
-          m.cd = 0.55;
-          hurtBase(6);
-          burst(m.x,m.y,18,'#ffb7c7','#ff5a7a',1.0);
-        }
-      }else{
-        // hit player at day (rare annoyance)
-        const pd = Math.hypot(m.x-P.x, m.y-P.y);
-        if(pd<20 && m.cd<=0){
-          m.cd = 0.55;
-          hurtPlayer(6);
-        }
-      }
-
-      if(m.hp<=0) S.mobs.splice(i,1);
-    }
-  }
-
-  // ---------------------------------------------------------
-  // Update: phase, player, TNT fuse, particles
-  // ---------------------------------------------------------
-  function updatePhase(dt){
-    S.phaseT -= dt;
-    if(S.phaseT<=0){
-      S.day = !S.day;
-      S.phaseT = S.day ? DAY_LEN : NIGHT_LEN;
-      setModeUI(S.day);
-      if(S.day){
-        showToast("ALBA.\nAndrei: \"Ok. Mining time.\"");
-        sfx('ui');
-      }else{
-        showToast("NOTTE.\nAndrei: \"Băi... protejăm casa!\"");
-        sfx('ui');
-        // clear some cracks for fairness
-        if(S.cracks.size>30) S.cracks.clear();
-      }
-    }
-  }
-
-  function updatePlayer(dt){
-    // movement vector from joystick + keys
-    let mx = 0, my = 0;
-    if(input.joy.active){
-      mx += input.joy.x;
-      my += input.joy.y;
-    }
-    if(input.keys.w) my -= 1;
-    if(input.keys.s) my += 1;
-    if(input.keys.a) mx -= 1;
-    if(input.keys.d) mx += 1;
-
-    const len = Math.hypot(mx,my);
-    if(len>1){ mx/=len; my/=len; }
-
-    const speed = S.day ? 78 : 72;
-    P.vx = lerp(P.vx, mx*speed, clamp(dt*10,0,1));
-    P.vy = lerp(P.vy, my*speed, clamp(dt*10,0,1));
-
-    P.x += P.vx*dt;
-    P.y += P.vy*dt;
-
-    // keep inside world
-    P.x = clamp(P.x, TILE*0.8, (GW-0.8)*TILE);
-    P.y = clamp(P.y, TILE*0.8, (GH-0.8)*TILE);
-
-    if(P.vx>8) P.dir=1;
-    if(P.vx<-8) P.dir=-1;
-
-    P.atkCd = Math.max(0, P.atkCd - dt);
-
-    // action hold = turbo hits
-    if(input.act.down){
-      input.act.hold += dt;
-      // initial tap hit + repeated hits
-      actTimer -= dt;
-      if(actTimer<=0){
-        actTimer = (input.act.hold>0.25) ? 0.10 : 0.18;
-        mineOrHit();
-      }
-    }else{
-      input.act.hold = 0;
-      actTimer = 0;
-    }
-
-    // place/ignite requests
-    if(input.wantPlace){
-      input.wantPlace = false;
-      placeTNT();
-    }
-    if(input.wantIgnite){
-      input.wantIgnite = false;
-      igniteTNT();
-    }
-  }
-  let actTimer = 0;
-
-  function updateTNT(dt){
-    for(let i=S.tntPlaced.length-1;i>=0;i--){
-      const t = S.tntPlaced[i];
-      if(t.fuse>0){
-        t.fuse += dt;
-        // fuse ~1.2s: short and meme
-        if(t.fuse > 1.20){
-          S.tntPlaced.splice(i,1);
-          explode(t.gx,t.gy);
-        }
-      }
-    }
-  }
-
-  function updateSpawns(dt){
-    if(S.day){
-      // small chance daytime mobs
-      if(Math.random() < 0.03*dt && S.mobs.length<6) spawnMob();
-    }else{
-      // night: more mobs
-      const cap = 12;
-      if(S.mobs.length < cap && Math.random() < (0.55*dt)) spawnMob();
-    }
-  }
-
-  function updateParticles(dt){
-    for(let i=S.particles.length-1;i>=0;i--){
-      const p=S.particles[i];
-      p.t += dt;
-      if(p.t>=p.life){ S.particles.splice(i,1); continue; }
-      p.vx *= (1 - p.drag);
-      p.vy *= (1 - p.drag);
-      p.vy += p.g*dt;
-      p.x += p.vx*dt;
-      p.y += p.vy*dt;
-    }
-  }
-
-  // ---------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------
-  function drawBackground(){
-    ctx.fillStyle = '#05060b';
-    ctx.fillRect(0,0,iW,iH);
-
-    // subtle scanlines / fog
-    const t = now()*0.001;
-    for(let i=0;i<3;i++){
-      const y = (Math.sin(t*0.7 + i*1.4)*0.5+0.5) * iH*0.35 + iH*(0.18+i*0.16);
-      const a = 0.08 + i*0.05;
-      ctx.fillStyle = `rgba(${S.day?90:180},${S.day?120:70},${S.day?210:120},${a})`;
-      ctx.fillRect(0, y, iW, 2+i*2);
-    }
-  }
-
-  function drawWorld(){
-    const {ox,oy} = worldToScreenOffsets();
-
-    // blocks
-    for(let gy=0;gy<GH;gy++){
-      for(let gx=0;gx<GW;gx++){
-        const t = S.grid[gy][gx];
-        if(t===BT.empty) continue;
-
-        const x = ox + gx*TILE;
-        const y = oy + gy*TILE;
-
-        ctx.fillStyle = tex(t,gx,gy);
-        ctx.fillRect(x,y,TILE,TILE);
-
-        // top highlight + bottom shade
-        ctx.fillStyle = 'rgba(255,255,255,0.10)';
-        ctx.fillRect(x, y, TILE, 1);
-        ctx.fillStyle = 'rgba(0,0,0,0.18)';
-        ctx.fillRect(x, y+TILE-2, TILE, 2);
-
-        // ore glow pulses
-        if(t===BT.copper){
-          const pulse = (Math.sin(now()*0.005 + (gx+gy)*0.7)*0.5+0.5);
-          ctx.fillStyle = `rgba(255, 200, 140, ${0.10 + pulse*0.12})`;
-          ctx.fillRect(x+2,y+2,TILE-4,TILE-4);
-        }
-        if(t===BT.diamond){
-          const pulse = (Math.sin(now()*0.007 + (gx+gy)*0.9)*0.5+0.5);
-          ctx.fillStyle = `rgba(120, 255, 255, ${0.12 + pulse*0.18})`;
-          ctx.fillRect(x+2,y+2,TILE-4,TILE-4);
-        }
-        if(t===BT.tnt){
-          const pulse = (Math.sin(now()*0.008 + (gx+gy)*0.6)*0.5+0.5);
-          ctx.fillStyle = `rgba(255, 120, 120, ${0.10 + pulse*0.16})`;
-          ctx.fillRect(x+2,y+2,TILE-4,TILE-4);
+        update() {
+            this.y += this.speed;
+            
+            // Se tocca il fondo
+            if (this.y > height) {
+                this.markedForDeletion = true;
+                if (['creeper', 'enderman'].includes(this.type)) {
+                    takeDamage(this.damage);
+                }
+            }
         }
 
-        // cracks overlay
-        const k = keyXY(gx,gy);
-        const dmg = S.cracks.get(k)||0;
-        if(dmg>0){
-          const hard = hardness(t);
-          const pct = clamp(dmg/hard, 0, 1);
-          ctx.strokeStyle = `rgba(10,10,14,${0.25+pct*0.60})`;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          const cx=x+TILE/2, cy=y+TILE/2;
-          for(let i=0;i<4;i++){
-            const a = (i*Math.PI/2) + pct*0.8;
-            const r = TILE*(0.18 + pct*0.45);
-            ctx.moveTo(cx,cy);
-            ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r);
-          }
-          ctx.stroke();
-          ctx.fillStyle = `rgba(0,0,0,${0.08 + pct*0.16})`;
-          ctx.fillRect(x,y,TILE,TILE);
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+
+            // Disegna il blocco stile Minecraft (bordo + centro)
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, this.size, this.size); // Bordo
+            ctx.fillStyle = this.color;
+            ctx.fillRect(4, 4, this.size - 8, this.size - 8); // Interno
+
+            // Texture specifiche
+            if (this.type === 'copper' || this.type === 'diamond') {
+                ctx.fillStyle = '#fff';
+                ctx.globalAlpha = 0.5;
+                ctx.fillRect(10, 10, 10, 10);
+                ctx.fillRect(this.size-20, this.size-20, 8, 8);
+                ctx.globalAlpha = 1;
+            }
+            if (this.type === 'tnt') {
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px "Press Start 2P"';
+                ctx.fillText("TNT", 10, this.size/2 + 5);
+                // Strisce
+                ctx.fillStyle = '#ccc';
+                ctx.fillRect(4, 15, this.size-8, 5);
+            }
+            if (this.type === 'creeper') {
+                ctx.fillStyle = '#000';
+                // Faccia Creeper
+                ctx.fillRect(10, 10, 10, 10); // Occhio sx
+                ctx.fillRect(this.size-20, 10, 10, 10); // Occhio dx
+                ctx.fillRect(this.size/2 - 5, 20, 10, 15); // Naso
+                ctx.fillRect(15, 35, this.size-30, 10); // Bocca
+            }
+            if (this.type === 'enderman') {
+                ctx.fillStyle = '#d0f';
+                ctx.fillRect(5, 15, 15, 5); // Occhi
+                ctx.fillRect(this.size-20, 15, 15, 5);
+            }
+
+            ctx.restore();
         }
 
-        // base HP glow during night
-        if(t===BT.base && !S.day){
-          const pulse = (Math.sin(now()*0.008 + gx)*0.5+0.5);
-          ctx.fillStyle = `rgba(255,90,122,${0.05+pulse*0.10})`;
-          ctx.fillRect(x+1,y+1,TILE-2,TILE-2);
+        hit() {
+            this.hp--;
+            createParticles(this.x + this.size/2, this.y + this.size/2, this.color);
+            playSound('hit');
+
+            if (this.hp <= 0) {
+                this.markedForDeletion = true;
+                
+                if (this.type === 'tnt') {
+                    explodeTNT();
+                } else if (['copper', 'diamond', 'stone'].includes(this.type)) {
+                    score += this.score;
+                    playSound('copper');
+                    scoreEl.innerText = score;
+                } else {
+                    // Nemici uccisi
+                    score += 10;
+                    scoreEl.innerText = score;
+                }
+            } else {
+                // Effetto "hit" bianco
+                ctx.save();
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.restore();
+            }
         }
-      }
     }
 
-    // TNT placed
-    for(const t of S.tntPlaced){
-      const x = ox + t.gx*TILE;
-      const y = oy + t.gy*TILE;
-      // box
-      ctx.drawImage(SPR.tnt, x+2, y+2);
-      if(t.fuse>0){
-        const pct = clamp(t.fuse/1.2,0,1);
-        ctx.fillStyle = `rgba(255,255,255,${0.10+pct*0.35})`;
-        ctx.fillRect(x,y,TILE,TILE);
-      }
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.size = Math.random() * 8 + 4;
+            this.speedX = Math.random() * 6 - 3;
+            this.speedY = Math.random() * 6 - 3;
+            this.life = 1;
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            this.life -= 0.05;
+        }
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+            ctx.globalAlpha = 1;
+        }
     }
 
-    // mobs
-    for(const m of S.mobs){
-      const x = ox + (m.x);
-      const y = oy + (m.y);
-      const img = (m.type==='creeper')?SPR.creeper:(m.type==='ender')?SPR.ender:SPR.pig;
+    // --- LOGICA DI GIOCO ---
 
-      // shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.beginPath();
-      ctx.ellipse(x, y+12, 9, 3, 0, 0, Math.PI*2);
-      ctx.fill();
-
-      // creeper warning
-      if(m.type==='creeper' && m.fuse>0){
-        const pct = clamp(m.fuse/1.55,0,1);
-        ctx.fillStyle = `rgba(255,255,255,${0.10+pct*0.35})`;
-        ctx.fillRect(x-6,y-12,12,12);
-      }
-
-      if(m.blink>0) ctx.globalAlpha = 0.35;
-      ctx.drawImage(img, Math.floor(x-6), Math.floor(y-12));
-      ctx.globalAlpha = 1;
-
-      // hp mini bar
-      ctx.fillStyle = 'rgba(0,0,0,0.45)';
-      ctx.fillRect(x-6, y-18, 12, 3);
-      ctx.fillStyle = '#54f08b';
-      ctx.fillRect(x-6, y-18, 12*clamp(m.hp/26,0,1), 3);
+    function createParticles(x, y, color) {
+        for (let i = 0; i < 5; i++) {
+            particles.push(new Particle(x, y, color));
+        }
     }
 
-    // player (Andrei)
-    // night aura
-    if(!S.day){
-      const pulse=(Math.sin(now()*0.01)*0.5+0.5);
-      ctx.fillStyle=`rgba(255,214,107,${0.05+pulse*0.10})`;
-      ctx.fillRect(ox+P.x-10, oy+P.y-18, 20, 26);
-    }
-    // draw sprite
-    ctx.drawImage(SPR.andrei, Math.floor(ox+P.x-6), Math.floor(oy+P.y-12));
-
-    // pickaxe in hand
-    const px = ox+P.x + P.dir*10;
-    const py = oy+P.y-6;
-    ctx.save();
-    ctx.translate(px,py);
-    ctx.rotate(P.dir>0 ? 0.2 : -0.2);
-    ctx.drawImage(SPR.pick, -8, -6);
-    ctx.restore();
-
-    // UI overlay: base marker
-    ctx.fillStyle='rgba(0,0,0,0.40)';
-    ctx.fillRect(ox+(BASE.gx-1)*TILE, oy+(BASE.gy-2)*TILE, TILE*3, 12);
-    ctx.fillStyle='rgba(255,255,255,0.85)';
-    ctx.font='10px system-ui';
-    ctx.fillText('CASA DI ANDREI', ox+(BASE.gx-1)*TILE+6, oy+(BASE.gy-2)*TILE+10);
-
-    // vignette
-    ctx.fillStyle='rgba(0,0,0,0.20)';
-    ctx.fillRect(0,0,iW,8);
-    ctx.fillRect(0,iH-10,iW,10);
-  }
-
-  function drawParticles(){
-    for(const p of S.particles){
-      const a = 1 - (p.t/p.life);
-      if(p.glow){
-        ctx.globalAlpha = 0.18*a;
-        ctx.fillStyle = p.col;
-        ctx.fillRect(p.x-p.r*2, p.y-p.r*2, p.r*4, p.r*4);
-      }
-      ctx.globalAlpha = 0.95*a;
-      ctx.fillStyle = p.col;
-      ctx.fillRect(p.x-p.r, p.y-p.r, p.r*2, p.r*2);
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  // ---------------------------------------------------------
-  // Main loop
-  // ---------------------------------------------------------
-  let tPrev = now();
-
-  function tick(){
-    const t = now();
-    let dt = (t - tPrev)/1000;
-    tPrev = t;
-    dt = Math.min(dt, 0.033);
-
-    if(toastT && t>toastT){
-      toast.classList.remove('show');
-      toastT=0;
+    function takeDamage(amount) {
+        health -= amount;
+        healthEl.innerText = Math.max(0, health);
+        document.body.style.backgroundColor = '#500'; // Flash rosso bg
+        setTimeout(() => document.body.style.backgroundColor = '#000', 100);
+        
+        if (health <= 0) {
+            endGame();
+        }
     }
 
-    // stop if dead
-    if(S.hp<=0 || S.baseHp<=0){
-      render(dt);
-      requestAnimationFrame(tick);
-      return;
+    function explodeTNT() {
+        playSound('tnt');
+        flashEl.style.opacity = 0.8;
+        setTimeout(() => flashEl.style.opacity = 0, 200);
+        
+        // Uccide tutti i nemici visibili
+        entities.forEach(e => {
+            if (['creeper', 'enderman', 'stone'].includes(e.type)) {
+                e.hp = 0;
+                e.markedForDeletion = true;
+                createParticles(e.x, e.y, e.color);
+            }
+        });
+        score += 50; // Bonus TNT
+        scoreEl.innerText = score;
     }
 
-    // timers
-    S.camShake = Math.max(0, S.camShake - dt*18);
-    S.msgCd = Math.max(0, S.msgCd - dt);
+    function spawner() {
+        if (frame % 40 === 0) { // Frequenza spawn
+            let type;
+            let rand = Math.random();
 
-    updatePhase(dt);
-    updateSpawns(dt);
-    updatePlayer(dt);
-    updateTNT(dt);
-    updateMobs(dt);
-    updateParticles(dt);
-
-    // HUD
-    elScore.textContent = Math.floor(S.score);
-    elCu.textContent = S.cu;
-    elDia.textContent = S.dia;
-    elTnt.textContent = S.tnt;
-    elHp.textContent = S.hp;
-    elBaseHp.textContent = S.baseHp;
-    elTimer.textContent = (S.day ? 'Giorno' : 'Notte') + ' ' + Math.ceil(S.phaseT) + 's';
-
-    // extra meme: if copper piles up
-    if(S.cu>0 && S.cu%15===0 && S.msgCd<=0){
-      S.msgCd = 3.0;
-      showToast("RAME CHECK.\nAndrei: \"Cu is love, Cu is life.\"");
+            if (isNight) {
+                // Notte: Più nemici
+                if (rand < 0.6) type = 'creeper';
+                else if (rand < 0.9) type = 'enderman';
+                else type = 'tnt';
+            } else {
+                // Giorno: Più risorse
+                if (rand < 0.5) type = 'copper';
+                else if (rand < 0.8) type = 'stone';
+                else if (rand < 0.95) type = 'diamond';
+                else type = 'tnt';
+            }
+            entities.push(new Entity(type));
+        }
     }
 
-    render(dt);
-    requestAnimationFrame(tick);
-  }
+    // Gestione input (Mouse e Touch unificati)
+    function handleInput(e) {
+        if (!gameRunning) return;
+        e.preventDefault(); // Stop zoom
 
-  function render(){
-    drawBackground();
+        // Ottieni coordinate
+        let clientX, clientY;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
 
-    // world offset stored in particle coords too (we spawn in world coords) -> convert once:
-    // For simplicity: we store particles already in world coords, but draw in screen coords.
-    // So we remap particles each frame using ox/oy.
-    const {ox,oy} = worldToScreenOffsets();
+        // Effetto piccone (cursore visivo temporaneo)
+        createParticles(clientX, clientY, '#fff');
 
-    // temporarily shift particle positions without rewriting state:
-    // (cheap trick: draw them with offset)
-    drawWorld();
+        // Controlla collisioni con entità
+        for (let i = entities.length - 1; i >= 0; i--) {
+            let ent = entities[i];
+            if (clientX > ent.x && clientX < ent.x + ent.size &&
+                clientY > ent.y && clientY < ent.y + ent.size) {
+                ent.hit();
+                return; // Colpisci solo uno alla volta
+            }
+        }
+    }
 
-    // draw particles with offset transform
-    ctx.save();
-    ctx.translate(ox,oy);
-    drawParticles();
-    ctx.restore();
+    canvas.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', handleInput, {passive: false});
 
-    // top-right tiny hint
-    ctx.fillStyle='rgba(0,0,0,0.35)';
-    ctx.fillRect(iW-160, 10, 150, 18);
-    ctx.fillStyle='rgba(255,255,255,0.85)';
-    ctx.font='10px system-ui';
-    ctx.fillText(S.day ? 'Scava: Cu > Dia > TNT' : 'Notte: proteggi la casa', iW-154, 23);
-  }
+    function gameLoop() {
+        if (!gameRunning) return;
 
-  // Re-map burst to use world coords (so it aligns with translate in render)
-  const _burst = burst;
-  burst = function(wx,wy,n,a,b,power=1){
-    _burst(wx,wy,n,a,b,power);
-  };
+        ctx.clearRect(0, 0, width, height);
 
-  // ---------------------------------------------------------
-  // Buttons
-  // ---------------------------------------------------------
-  document.getElementById('btnRestart').addEventListener('click', ()=> resetAll(true));
+        // Sky background
+        ctx.fillStyle = isNight ? '#000033' : '#87CEEB';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Ciclo giorno notte
+        dayCycleTimer++;
+        if (dayCycleTimer > 1000) {
+            isNight = !isNight;
+            dayCycleTimer = 0;
+            waveEl.innerText = isNight ? "NOTTE: DIFENDI!" : "GIORNO: SCAVA!";
+            waveEl.style.color = isNight ? "#ff5555" : "#aaf";
+            difficulty += 0.5; // Aumenta difficoltà ogni notte
+        }
 
-  // ---------------------------------------------------------
-  // Start
-  // ---------------------------------------------------------
-  resize();
-  resetAll(false);
+        spawner();
 
-  // Quick first message
-  showToast("Controlli:\n- Joystick sinistra\n- COLPISCI destra (tap/hold)\n- PIAZZA TNT + ACCENDI\n\nAndrei: \"Hai!\"");
-  sfx('ui');
+        // Update entities
+        entities.forEach(e => {
+            e.update();
+            e.draw();
+        });
+        entities = entities.filter(e => !e.markedForDeletion);
 
-  requestAnimationFrame(tick);
+        // Update particles
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        particles = particles.filter(p => p.life > 0);
 
-  // ---------------------------------------------------------
-  // Important: particles are in world coords -> spawn with world coords
-  // So we store them relative to world (not screen).
-  // Adjust spawn calls accordingly (we already use world coords).
-  // ---------------------------------------------------------
-  // NOTE: we used burst(P.x,P.y...) and burst((gx+0.5)*TILE...) -> world coords ok.
-  // In drawParticles we translate(ox,oy) so they appear correctly.
-})();
+        frame++;
+        requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('gameOverScreen').style.display = 'none';
+        score = 0;
+        health = 100;
+        difficulty = 1;
+        entities = [];
+        particles = [];
+        scoreEl.innerText = '0';
+        healthEl.innerText = '100';
+        gameRunning = true;
+        isNight = false;
+        waveEl.innerText = "GIORNO: SCAVA!";
+        
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+        gameRunning = false;
+        document.getElementById('finalScore').innerText = score;
+        document.getElementById('gameOverScreen').style.display = 'flex';
+    }
+
 </script>
 </body>
 </html>
